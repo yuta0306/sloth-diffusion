@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     model = model.to(device)
     dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
