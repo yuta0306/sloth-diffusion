@@ -22,7 +22,7 @@ from torchvision.transforms import (
 from tqdm import tqdm, trange
 
 model = UNet(
-    sample_size=128,
+    sample_size=64,
     in_channels=3,
     out_channels=3,
     layers_per_block=2,
@@ -53,8 +53,8 @@ ema_model = EMAModel(model=model)
 
 transforms = Compose(
     [
-        Resize(128, interpolation=InterpolationMode.BILINEAR),
-        CenterCrop(128),
+        Resize(64, interpolation=InterpolationMode.BILINEAR),
+        CenterCrop(64),
         RandomHorizontalFlip(),
         ToTensor(),
         Normalize([0.5], [0.5]),
