@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "sloth-diffusion"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+torchvision = "^0.13.1"
+pytorch-lightning = "^1.7.1"
+bs4 = "^0.0.1"
+types-requests = "^2.28.8"
+html5lib = "^1.1"
+lxml = "^4.9.1"
+diffusions = {git = "https://github.com/yuta0306/diffusions.git", rev = "main"}
+
+[tool.poetry.dev-dependencies]
+isort = "^5.10.1"
+black = "^22.6.0"
+mypy = "^0.971"
+flake8 = "^5.0.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
