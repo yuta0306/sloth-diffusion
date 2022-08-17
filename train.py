@@ -22,19 +22,38 @@ from torchvision.transforms import (
 from tqdm.auto import tqdm, trange
 
 model = UNet(
-    sample_size=256,
+    sample_size=64,
     in_channels=3,
     out_channels=3,
     layers_per_block=2,
-    block_out_channels=(256, 256, 512, 512),
+    block_out_channels=(32, 64, 128, 256),
     down_block_types=(
         DownBlock,
         AttnDownBlock,
         AttnDownBlock,
-        DownBlock,
+        AttnDownBlock,
     ),
     up_block_types=(
+        AttnUpBlock,
+        AttnUpBlock,
+        AttnUpBlock,
         UpBlock,
+    ),
+)
+sr_model = UNet(
+    sample_size=256,
+    in_channels=3,
+    out_channels=3,
+    layers_per_block=2,
+    block_out_channels=(32, 64, 128, 256),
+    down_block_types=(
+        DownBlock,
+        AttnDownBlock,
+        AttnDownBlock,
+        AttnDownBlock,
+    ),
+    up_block_types=(
+        AttnUpBlock,
         AttnUpBlock,
         AttnUpBlock,
         UpBlock,
@@ -51,8 +70,8 @@ ema_model = EMAModel(model=model)
 
 transforms = Compose(
     [
-        Resize(256, interpolation=InterpolationMode.BILINEAR),
-        CenterCrop(256),
+        Resize(64, interpolation=InterpolationMode.BILINEAR),
+        CenterCrop(64),
         RandomHorizontalFlip(),
         ToTensor(),
         Normalize([0.5], [0.5]),
@@ -89,7 +108,7 @@ if __name__ == "__main__":
 
     model = model.to(device)
     dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
@@ -97,7 +116,7 @@ if __name__ == "__main__":
         model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
-        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 4):
+        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 8):
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
             timesteps = torch.randint(
