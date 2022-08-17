@@ -19,7 +19,7 @@ from torchvision.transforms import (
     Resize,
     ToTensor,
 )
-from tqdm.notebook import tqdm, trange
+from tqdm.auto import tqdm, trange
 
 model = UNet(
     sample_size=64,
@@ -70,7 +70,7 @@ class SlothDataset(Dataset):
 
         for top, _, filenames in os.walk("images"):
             pass
-        self.files = [os.path.join(top, filename) for filename in filenames]
+        self.files = [os.path.join(top, filename) for filename in filenames][:1]
 
         self.transforms = transforms
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     model = model.to(device)
     dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
-        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 4):
+        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 8):
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
             timesteps = torch.randint(
