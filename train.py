@@ -22,23 +22,19 @@ from torchvision.transforms import (
 from tqdm.auto import tqdm, trange
 
 model = UNet(
-    sample_size=64,
+    sample_size=256,
     in_channels=3,
     out_channels=3,
     layers_per_block=2,
-    block_out_channels=(128, 128, 256, 256, 512, 512),
+    block_out_channels=(256, 256, 512, 512),
     down_block_types=(
         DownBlock,
-        AttnDownBlock,
-        AttnDownBlock,
         AttnDownBlock,
         AttnDownBlock,
         DownBlock,
     ),
     up_block_types=(
         UpBlock,
-        AttnUpBlock,
-        AttnUpBlock,
         AttnUpBlock,
         AttnUpBlock,
         UpBlock,
@@ -55,8 +51,8 @@ ema_model = EMAModel(model=model)
 
 transforms = Compose(
     [
-        Resize(64, interpolation=InterpolationMode.BILINEAR),
-        CenterCrop(64),
+        Resize(256, interpolation=InterpolationMode.BILINEAR),
+        CenterCrop(256),
         RandomHorizontalFlip(),
         ToTensor(),
         Normalize([0.5], [0.5]),
@@ -93,7 +89,7 @@ if __name__ == "__main__":
 
     model = model.to(device)
     dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
@@ -101,7 +97,7 @@ if __name__ == "__main__":
         model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
-        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 8):
+        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 4):
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
             timesteps = torch.randint(
