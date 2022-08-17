@@ -22,21 +22,25 @@ from torchvision.transforms import (
 from tqdm.notebook import tqdm, trange
 
 model = UNet(
-    sample_size=128,
+    sample_size=64,
     in_channels=3,
     out_channels=3,
     layers_per_block=2,
-    block_out_channels=(128, 256, 384, 512),
+    block_out_channels=(128, 128, 256, 256, 512, 512),
     down_block_types=(
-        AttnDownBlock,
-        AttnDownBlock,
         DownBlock,
+        AttnDownBlock,
+        AttnDownBlock,
+        AttnDownBlock,
+        AttnDownBlock,
         DownBlock,
     ),
     up_block_types=(
-        AttnUpBlock,
-        AttnUpBlock,
         UpBlock,
+        AttnUpBlock,
+        AttnUpBlock,
+        AttnUpBlock,
+        AttnUpBlock,
         UpBlock,
     ),
 )
@@ -51,8 +55,8 @@ ema_model = EMAModel(model=model)
 
 transforms = Compose(
     [
-        Resize(128, interpolation=InterpolationMode.BILINEAR),
-        CenterCrop(128),
+        Resize(64, interpolation=InterpolationMode.BILINEAR),
+        CenterCrop(64),
         RandomHorizontalFlip(),
         ToTensor(),
         Normalize([0.5], [0.5]),
@@ -89,7 +93,7 @@ if __name__ == "__main__":
 
     model = model.to(device)
     dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
@@ -97,7 +101,7 @@ if __name__ == "__main__":
         model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
-        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 8):
+        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 4):
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
             timesteps = torch.randint(
@@ -114,7 +118,7 @@ if __name__ == "__main__":
             loss_epoch += loss.item()
             loss.backward()
 
-            if step + 1 % 4 == 0:  # accumulate batches
+            if step + 1 % 4 == 0:
                 optimizer.step()
                 lr_scheduler.step()
 
@@ -124,7 +128,7 @@ if __name__ == "__main__":
 
         print(f"EPOCH {epoch} ENDS >> loss = {loss_epoch}")
 
-        if epoch + 1 % 20 == 0:
+        if epoch + 1 % 50 == 0:
             # save
             os.makedirs("weights", exist_ok=True)
             torch.save(
