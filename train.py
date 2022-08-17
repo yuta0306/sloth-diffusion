@@ -29,32 +29,34 @@ model = UNet(
     block_out_channels=(128, 128, 256, 256, 512, 512),
     down_block_types=(
         DownBlock,
-        AttnDownBlock,
-        AttnDownBlock,
-        AttnDownBlock,
+        DownBlock,
+        DownBlock,
+        DownBlock,
         AttnDownBlock,
         DownBlock,
     ),
     up_block_types=(
         UpBlock,
         AttnUpBlock,
-        AttnUpBlock,
-        AttnUpBlock,
-        AttnUpBlock,
+        UpBlock,
+        UpBlock,
+        UpBlock,
         UpBlock,
     ),
 )
 
 noise_scheduler = DDPM(num_train_timesteps=1000)
-optimizer = optim.AdamW(model.parameters(), lr=1e-4)
-# lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer=optimizer)
+optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(
+    optimizer=optimizer, T_max=1000, eta_min=1e-5
+)
 
 ema_model = EMAModel(model=model)
 
 transforms = Compose(
     [
-        Resize(64, interpolation=InterpolationMode.BILINEAR),
-        CenterCrop(64),
+        Resize(128, interpolation=InterpolationMode.BILINEAR),
+        CenterCrop(128),
         RandomHorizontalFlip(),
         ToTensor(),
         Normalize([0.5], [0.5]),
@@ -95,7 +97,7 @@ if __name__ == "__main__":
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
-    for epoch in trange(100):
+    for epoch in trange(1000):
         model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
@@ -117,28 +119,31 @@ if __name__ == "__main__":
             loss.backward()
 
             optimizer.step()
-            # lr_scheduler.step()
+            lr_scheduler.step()
 
             # EMA
             # ema_model.step(model.cpu())
             optimizer.zero_grad()
 
-        # save
-        os.makedirs("weights", exist_ok=True)
-        torch.save(
-            model.to("cpu").state_dict(), f"weights/epoch_{epoch}-loss_{loss_epoch}.pt"
-        )
         print(f"EPOCH {epoch} ENDS >> loss = {loss_epoch}")
 
-        generator = torch.manual_seed(0)
-        os.makedirs(f"results/epoch_{epoch}", exist_ok=True)
-        for i in range(4):
-            images = pipeline(batch_size=1, generator=generator)["sample"]
-            images_processed = (
-                einops.rearrange((images * 255).round(), "b c h w -> b h w c")
-                .numpy()
-                .astype("uint8")
+        if epoch + 1 % 50 == 0:
+            # save
+            os.makedirs("weights", exist_ok=True)
+            torch.save(
+                model.to("cpu").state_dict(),
+                f"weights/epoch_{epoch}-loss_{loss_epoch}.pt",
             )
-            image = images_processed[0]
-            img = Image.fromarray(image, mode="RGB")
-            img.save(os.path.join("results", f"epoch_{epoch}", f"image_{i}.jpg"))
+
+            generator = torch.manual_seed(0)
+            os.makedirs(f"results/epoch_{epoch}", exist_ok=True)
+            for i in range(4):
+                images = pipeline(batch_size=1, generator=generator)["sample"]
+                images_processed = (
+                    einops.rearrange((images * 255).round(), "b c h w -> b h w c")
+                    .numpy()
+                    .astype("uint8")
+                )
+                image = images_processed[0]
+                img = Image.fromarray(image, mode="RGB")
+                img.save(os.path.join("results", f"epoch_{epoch}", f"image_{i}.jpg"))
