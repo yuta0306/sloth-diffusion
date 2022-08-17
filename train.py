@@ -29,26 +29,26 @@ model = UNet(
     block_out_channels=(128, 128, 256, 256, 512, 512),
     down_block_types=(
         DownBlock,
-        DownBlock,
-        DownBlock,
-        DownBlock,
+        AttnDownBlock,
+        AttnDownBlock,
+        AttnDownBlock,
         AttnDownBlock,
         DownBlock,
     ),
     up_block_types=(
         UpBlock,
         AttnUpBlock,
-        UpBlock,
-        UpBlock,
-        UpBlock,
+        AttnUpBlock,
+        AttnUpBlock,
+        AttnUpBlock,
         UpBlock,
     ),
 )
 
 noise_scheduler = DDPM(num_train_timesteps=1000)
-optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+optimizer = optim.AdamW(model.parameters(), lr=1e-4)
 lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(
-    optimizer=optimizer, T_max=1000, eta_min=1e-5
+    optimizer=optimizer, T_max=1000, eta_min=1e-6
 )
 
 ema_model = EMAModel(model=model)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     model = model.to(device)
     dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
-        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 4):
+        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 8):
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
             timesteps = torch.randint(
@@ -118,16 +118,17 @@ if __name__ == "__main__":
             loss_epoch += loss.item()
             loss.backward()
 
-            optimizer.step()
-            lr_scheduler.step()
+            if step + 1 % 4 == 0:  # accumulate batches
+                optimizer.step()
+                lr_scheduler.step()
 
-            # EMA
-            # ema_model.step(model.cpu())
-            optimizer.zero_grad()
+                # EMA
+                # ema_model.step(model.cpu())
+                optimizer.zero_grad()
 
         print(f"EPOCH {epoch} ENDS >> loss = {loss_epoch}")
 
-        if epoch + 1 % 50 == 0:
+        if epoch + 1 % 20 == 0:
             # save
             os.makedirs("weights", exist_ok=True)
             torch.save(
