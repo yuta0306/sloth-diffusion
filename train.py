@@ -47,9 +47,9 @@ model = UNet(
 
 noise_scheduler = DDPM(num_train_timesteps=1000)
 optimizer = optim.AdamW(model.parameters(), lr=1e-4)
-lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(
-    optimizer=optimizer, T_max=1000, eta_min=1e-6
-)
+# lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(
+#     optimizer=optimizer, T_max=1000, eta_min=1e-6
+# )
 
 ema_model = EMAModel(model=model)
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
             if step + 1 % 4 == 0:
                 optimizer.step()
-                lr_scheduler.step()
+                # lr_scheduler.step()
 
                 # EMA
                 # ema_model.step(model.cpu())
