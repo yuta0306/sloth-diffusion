@@ -22,11 +22,11 @@ from torchvision.transforms import (
 from tqdm.notebook import tqdm, trange
 
 model = UNet(
-    sample_size=64,
+    sample_size=128,
     in_channels=3,
     out_channels=3,
     layers_per_block=2,
-    block_out_channels=(64, 64, 128, 128, 256, 256),
+    block_out_channels=(128, 128, 256, 256, 512, 512),
     down_block_types=(
         DownBlock,
         AttnDownBlock,
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
-    for epoch in trange(30):
+    for epoch in trange(100):
         model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
@@ -133,12 +133,13 @@ if __name__ == "__main__":
         generator = torch.manual_seed(0)
         images = pipeline(batch_size=8, generator=generator)["sample"]
         images_processed = (
-            einops.rearrange((images * 255).round(), "s g b r -> s r g b ")
+            einops.rearrange((images * 255).round(), "b c h w -> b h w c")
             .numpy()
-            .as_type("uint8")
+            .astype("uint8")
         )
 
-        os.makedirs(f"results/epoch_{epoch}")
-        for i, image in enumerate(images_processed):
+        os.makedirs(f"results/epoch_{epoch}", exist_ok=True)
+        for i in range(images_processed.shape[0]):
+            image = images_processed[i]
             img = Image.fromarray(image, mode="RGB")
             img.save(os.path.join("results", f"epoch_{epoch}", f"image_{i}.jpg"))
