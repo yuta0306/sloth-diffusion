@@ -19,7 +19,7 @@ from torchvision.transforms import (
     Resize,
     ToTensor,
 )
-from tqdm import tqdm, trange
+from tqdm.notebook import tqdm, trange
 
 model = UNet(
     sample_size=64,
