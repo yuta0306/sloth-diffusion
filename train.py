@@ -98,7 +98,8 @@ if __name__ == "__main__":
     for epoch in trange(30):
         model.train()
         print(f"EPOCH {epoch} STARTS")
-        for step, batch in tqdm(enumerate(dataloader)):
+        loss_epoch = 0.0
+        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 4):
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
             timesteps = torch.randint(
@@ -112,18 +113,22 @@ if __name__ == "__main__":
 
             noise_pred = model(noisy_images, timesteps)["sample"]
             loss = F.mse_loss(noise_pred, noise)
+            loss_epoch += loss.item()
             loss.backward()
 
             optimizer.step()
             # lr_scheduler.step()
 
             # EMA
-            ema_model.step(model)
+            # ema_model.step(model.cpu())
             optimizer.zero_grad()
 
         # save
-        torch.save(model.to("cpu").state_dict(), f"weights/epoch_{epoch}.pt")
-        print(f"EPOCH {epoch} ENDS >> loss = {loss.item()}")
+        os.makedirs("weights", exist_ok=True)
+        torch.save(
+            model.to("cpu").state_dict(), f"weights/epoch_{epoch}-loss_{loss_epoch}.pt"
+        )
+        print(f"EPOCH {epoch} ENDS >> loss = {loss_epoch}")
 
         generator = torch.manual_seed(0)
         images = pipeline(batch_size=8, generator=generator)["sample"]
