@@ -131,15 +131,14 @@ if __name__ == "__main__":
         print(f"EPOCH {epoch} ENDS >> loss = {loss_epoch}")
 
         generator = torch.manual_seed(0)
-        images = pipeline(batch_size=8, generator=generator)["sample"]
-        images_processed = (
-            einops.rearrange((images * 255).round(), "b c h w -> b h w c")
-            .numpy()
-            .astype("uint8")
-        )
-
         os.makedirs(f"results/epoch_{epoch}", exist_ok=True)
-        for i in range(images_processed.shape[0]):
-            image = images_processed[i]
+        for i in range(4):
+            images = pipeline(batch_size=1, generator=generator)["sample"]
+            images_processed = (
+                einops.rearrange((images * 255).round(), "b c h w -> b h w c")
+                .numpy()
+                .astype("uint8")
+            )
+            image = images_processed[0]
             img = Image.fromarray(image, mode="RGB")
             img.save(os.path.join("results", f"epoch_{epoch}", f"image_{i}.jpg"))
