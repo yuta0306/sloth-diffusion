@@ -26,22 +26,18 @@ model = UNet(
     in_channels=3,
     out_channels=3,
     layers_per_block=2,
-    block_out_channels=(128, 128, 256, 256, 512, 512),
+    block_out_channels=(128, 256, 384, 512),
     down_block_types=(
-        DownBlock,
         AttnDownBlock,
         AttnDownBlock,
         AttnDownBlock,
         AttnDownBlock,
-        DownBlock,
     ),
     up_block_types=(
-        UpBlock,
         AttnUpBlock,
         AttnUpBlock,
         AttnUpBlock,
         AttnUpBlock,
-        UpBlock,
     ),
 )
 
