@@ -118,7 +118,7 @@ if __name__ == "__main__":
             loss_epoch += loss.item()
             loss.backward()
 
-            if step + 1 % 4 == 0:
+            if (step + 1) % 4 == 0:
                 optimizer.step()
                 # lr_scheduler.step()
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
         print(f"EPOCH {epoch} ENDS >> loss = {loss_epoch}")
 
-        if epoch + 1 % 50 == 0:
+        if (epoch + 1) % 20 == 0:
             # save
             os.makedirs("weights", exist_ok=True)
             torch.save(
