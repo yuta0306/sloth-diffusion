@@ -30,14 +30,14 @@ model = UNet(
     down_block_types=(
         AttnDownBlock,
         AttnDownBlock,
-        AttnDownBlock,
-        AttnDownBlock,
+        DownBlock,
+        DownBlock,
     ),
     up_block_types=(
         AttnUpBlock,
         AttnUpBlock,
-        AttnUpBlock,
-        AttnUpBlock,
+        UpBlock,
+        UpBlock,
     ),
 )
 
