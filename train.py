@@ -25,7 +25,7 @@ model = UNet(
     sample_size=64,
     in_channels=3,
     out_channels=3,
-    layers_per_block=2,
+    layers_per_block=3,
     block_out_channels=(32, 64, 128, 256),
     down_block_types=(
         DownBlock,
@@ -40,31 +40,31 @@ model = UNet(
         UpBlock,
     ),
 )
-sr_model = UNet(
-    sample_size=256,
-    in_channels=3,
-    out_channels=3,
-    layers_per_block=2,
-    block_out_channels=(32, 64, 128, 256),
-    down_block_types=(
-        DownBlock,
-        AttnDownBlock,
-        AttnDownBlock,
-        AttnDownBlock,
-    ),
-    up_block_types=(
-        AttnUpBlock,
-        AttnUpBlock,
-        AttnUpBlock,
-        UpBlock,
-    ),
-)
+# sr_model = UNet(
+#     sample_size=256,
+#     in_channels=3,
+#     out_channels=3,
+#     layers_per_block=2,
+#     block_out_channels=(32, 64, 128, 256),
+#     down_block_types=(
+#         DownBlock,
+#         AttnDownBlock,
+#         AttnDownBlock,
+#         AttnDownBlock,
+#     ),
+#     up_block_types=(
+#         AttnUpBlock,
+#         AttnUpBlock,
+#         AttnUpBlock,
+#         UpBlock,
+#     ),
+# )
 
 noise_scheduler = DDPM(num_train_timesteps=1000)
-optimizer = optim.AdamW(model.parameters(), lr=1e-4)
-# lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(
-#     optimizer=optimizer, T_max=1000, eta_min=1e-6
-# )
+optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+    optimizer=optimizer, eta_min=1e-6
+)
 
 ema_model = EMAModel(model=model)
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
             if (step + 1) % 4 == 0:
                 optimizer.step()
-                # lr_scheduler.step()
+                lr_scheduler.step()
 
                 # EMA
                 # ema_model.step(model.cpu())

@@ -19,13 +19,13 @@ class Crawler:
         self.session = requests.session()
         self.session.headers.update(
             {
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0"
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
             }
         )
         self.use_splash = use_splash
 
     def search(
-        self, keyword: str, max_num: int = 100, start: int = 0
+        self, keyword: str, max_num: int = 100, start: int = 1
     ) -> Dict[str, Dict[str, str]]:
         print(f"Search `{keyword}` image for Google")
 
@@ -52,30 +52,37 @@ class Crawler:
             # print(response.headers)
             print(response.url)
 
-            start = html.index("<")
-            end = "".join(list(reversed(html))).index(">")
-            html = html[start : len(html) - end]
+            # with open(f"page_{i}.html", "w") as f:
+            #     f.write(html)
+
+            # start = html.index("<")
+            # end = "".join(list(reversed(html))).index(">")
+            # html = html[start : len(html) - end]
 
             soup = BeautifulSoup(html, "lxml")
 
-            elements = soup.select(".ivg-i")
-            print("Elements:", len(elements))
-            image_tags = [
-                [elm.get("data-ved"), elm.select_one("img.rg_i")] for elm in elements
+            # elements = soup.select(".ivg-i")
+            # print("Elements:", len(elements))
+            # image_tags = [
+            #     [elm.get("data-ved"), elm.select_one("img.rg_i")] for elm in elements
+            # ]
+            # print("Image Tags:", len(image_tags))
+            elements = soup.select(".isv-r")
+            elements = [
+                elm
+                for elm in elements
+                if elm.get("data-ri") is not None and elm.get("data-id") is not None
             ]
-            print("Image Tags:", len(image_tags))
+
+            image_tags = {elm.get("data-id"): elm.select_one("img") for elm in elements}
 
             def get_src(tag):
                 if (src := tag.get("src")) is not None:
                     return src
                 return tag.get("data-src")
 
-            images = {
-                id_: get_src(img)
-                for [id_, img] in image_tags
-                # if elm.get("data-ri") is not None and elm.get("data-id") is not None
-            }
-            # images = {key: data for key, data in images.items() if data is not None}
+            images = {id_: get_src(img) for [id_, img] in image_tags.items()}
+            # print(len(images), images)
 
             if len(images) > 0:
                 prev_total = total
@@ -109,14 +116,19 @@ class Crawler:
         page = start
         while True:
             # https://www.google.com/search?q=sloth&oq=sloth&tbm=isch&ijn=3&asearch=ichunk&async=_id:rg_s,_pms:s,_fmt:pc&sourceid=chrome&ie=UTF-8
+            # params = {
+            #     "q": keyword,
+            #     "tbm": "isch",
+            #     "ijn": str(page),
+            #     "asearch": "ichunk",
+            #     "async": "_id:rg_s,_pms:s,_fmt:pc",
+            #     "sourceid": "chrome",
+            #     "ie": "UTF-8",
+            #     "hl": "en",
+            # }
             params = {
-                "q": keyword,
+                "q": keyword + " " + f"ijn:{page}",
                 "tbm": "isch",
-                "ijn": str(page),
-                "asearch": "ichunk",
-                "async": "_id:rg_s,_pms:s,_fmt:pc",
-                "sourceid": "chrome",
-                "ie": "UTF-8",
                 "hl": "en",
             }
             yield params
@@ -163,12 +175,26 @@ class Crawler:
 
 
 if __name__ == "__main__":
-    crawler = Crawler(use_splash=False)
-    res = crawler.search(keyword="sloth", max_num=10000)
-    save_dir = "images"
+    crawler = Crawler(use_splash=True)
+    for prefix in (
+        "",
+        "cute",
+        "animal",
+        "baby",
+        "zoo",
+        "columbia",
+        "eating",
+        "sleeping",
+    ):
+        try:
+            res = crawler.search(keyword=f"{prefix}+sloth", max_num=1000)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            save_dir = "images"
 
-    for filename, data in tqdm(res.items()):
-        if (url := data.get("url")) is not None:
-            crawler.save(url, save_dir=save_dir, filename=filename)
-        elif (image := data.get("data")) is not None:
-            crawler.save_by_base64(image, save_dir=save_dir, filename=filename)
+            for filename, data in tqdm(res.items()):
+                if (url := data.get("url")) is not None:
+                    crawler.save(url, save_dir=save_dir, filename=filename)
+                elif (image := data.get("data")) is not None:
+                    crawler.save_by_base64(image, save_dir=save_dir, filename=filename)
