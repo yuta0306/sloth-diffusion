@@ -85,7 +85,11 @@ class SlothDataset(Dataset):
 
         for top, _, filenames in os.walk("images"):
             pass
-        self.files = [os.path.join(top, filename) for filename in filenames]
+        self.files = [
+            os.path.join(top, filename)
+            for filename in filenames
+            if filename[-4:] == ".jpg"
+        ]
 
         self.transforms = transforms
 
