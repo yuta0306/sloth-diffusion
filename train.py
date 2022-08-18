@@ -7,7 +7,7 @@ import torch.optim as optim
 from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 from diffusions.pipelines import DDPMPipeline
 from diffusions.schedulers import DDPM
-from diffusions.utils import EMAModel
+from diffusions.utils import EMAModel, resized_image_to
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (
@@ -97,6 +97,13 @@ class SlothDataset(Dataset):
         item = Image.open(filename)
         item = item.convert("RGB")
 
+        # org = Compose(
+        #     [
+        #         Resize(64, interpolation=InterpolationMode.BILINEAR),
+        #         CenterCrop(64),
+        #     ]
+        # )(item)
+
         if self.transforms is not None:
             item = self.transforms(item)
 
@@ -107,6 +114,7 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     model = model.to(device)
+    # sr_model = sr_model.cpu()
     dataset = SlothDataset(transforms=transforms)
     dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
 
@@ -114,9 +122,11 @@ if __name__ == "__main__":
 
     for epoch in trange(1000):
         model.train()
+        # sr_model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
         for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 8):
+            # org = batch["org"]
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
             timesteps = torch.randint(
@@ -129,6 +139,8 @@ if __name__ == "__main__":
             noisy_images = noise_scheduler.add_noise(batch, noise, timesteps)
 
             noise_pred = model(noisy_images, timesteps)["sample"]
+            # noise_pred = resized_image_to(noise_pred, 256)
+            # noise_pred = sr_model(noise_pred, timesteps)["sample"]
             loss = F.mse_loss(noise_pred, noise)
             loss_epoch += loss.item()
             loss.backward()
