@@ -63,7 +63,7 @@ model = UNet(
 noise_scheduler = DDPM(num_train_timesteps=1000)
 optimizer = optim.AdamW(model.parameters(), lr=1e-3)
 lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-    optimizer=optimizer, eta_min=1e-6
+    optimizer=optimizer, T_0=200, T_mult=2, eta_min=1e-6
 )
 
 ema_model = EMAModel(model=model)
