@@ -7,7 +7,7 @@ import torch.optim as optim
 from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 from diffusions.pipelines import DDPMPipeline
 from diffusions.schedulers import DDPM
-from diffusions.utils import EMAModel, resized_image_to
+from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (
