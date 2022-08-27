@@ -1,4 +1,5 @@
 import os
+from math import ceil
 
 import einops
 import torch
@@ -22,23 +23,6 @@ from torchvision.transforms import (
     ToTensor,
 )
 from tqdm.auto import tqdm, trange
-
-model = UnconditionalEfficientUnet(
-    sample_size=64,
-    in_channels=3,
-    out_channels=3,
-    block_out_channels=(32, 64, 128, 256),
-    layers_per_block=3,
-    num_heads=(None, 1, 2, 4),
-)
-
-noise_scheduler = DDPM(num_train_timesteps=1000)
-optimizer = optim.AdamW(model.parameters(), lr=1e-3)
-lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-    optimizer=optimizer, T_0=2000, T_mult=2, eta_min=1e-6
-)
-
-ema_model = EMAModel(model=model)
 
 transforms = Compose(
     [
@@ -73,13 +57,6 @@ class SlothDataset(Dataset):
         item = Image.open(filename)
         item = item.convert("RGB")
 
-        # org = Compose(
-        #     [
-        #         Resize(64, interpolation=InterpolationMode.BILINEAR),
-        #         CenterCrop(64),
-        #     ]
-        # )(item)
-
         if self.transforms is not None:
             item = self.transforms(item)
 
@@ -88,11 +65,32 @@ class SlothDataset(Dataset):
 
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    bsz = 128
+    acc = 1
+
+    dataset = SlothDataset(transforms=transforms)
+    dataloader = DataLoader(dataset, batch_size=bsz, shuffle=True)
+    iters = ceil(len(dataset) // (bsz * acc))
+
+    model = UnconditionalEfficientUnet(
+        sample_size=64,
+        in_channels=3,
+        out_channels=3,
+        block_out_channels=(32, 64, 128, 256),
+        layers_per_block=3,
+        num_heads=(None, 1, 2, 4),
+    )
+
+    noise_scheduler = DDPM(num_train_timesteps=1000)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+    lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer=optimizer, T_0=iters, T_mult=2, eta_min=1e-6
+    )
+
+    ema_model = EMAModel(model=model)
 
     model = model.to(device)
     # sr_model = sr_model.cpu()
-    dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
@@ -101,7 +99,7 @@ if __name__ == "__main__":
         # sr_model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
-        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 32):
+        for step, batch in tqdm(enumerate(dataloader), total=iters * acc):
             # org = batch["org"]
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
@@ -121,7 +119,7 @@ if __name__ == "__main__":
             loss_epoch += loss.item()
             loss.backward()
 
-            if (step + 1) % 4 == 0:
+            if (step + 1) % acc == 0:
                 optimizer.step()
                 lr_scheduler.step()
 
