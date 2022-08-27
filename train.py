@@ -92,7 +92,7 @@ if __name__ == "__main__":
     model = model.to(device)
     # sr_model = sr_model.cpu()
     dataset = SlothDataset(transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     pipeline = DDPMPipeline(unet=model, scheduler=noise_scheduler)
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         # sr_model.train()
         print(f"EPOCH {epoch} STARTS")
         loss_epoch = 0.0
-        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 8):
+        for step, batch in tqdm(enumerate(dataloader), total=len(dataset) // 32):
             # org = batch["org"]
             batch = batch.to(device)
             noise = torch.randn(batch.shape).to(batch.device)
@@ -129,6 +129,7 @@ if __name__ == "__main__":
                 # ema_model.step(model.cpu())
                 optimizer.zero_grad()
 
+        loss_epoch = loss_epoch / (step + 1)
         print(f"EPOCH {epoch} ENDS >> loss = {loss_epoch}")
 
         if (epoch + 1) % 20 == 0:
