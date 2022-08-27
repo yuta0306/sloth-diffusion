@@ -187,7 +187,7 @@ if __name__ == "__main__":
         "sleeping",
     ):
         try:
-            res = crawler.search(keyword=f"{prefix}+sloth", max_num=1000)
+            res = crawler.search(keyword=f"{prefix}+sloth", max_num=10000, start=1)
         except KeyboardInterrupt:
             pass
         finally:
