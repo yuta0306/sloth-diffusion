@@ -1,5 +1,5 @@
+import math
 import os
-from math import ceil
 
 import einops
 import torch
@@ -30,7 +30,7 @@ transforms = Compose(
         CenterCrop(64),
         RandomHorizontalFlip(),
         ToTensor(),
-        Normalize([0.5], [0.5]),
+        # Normalize([0.5], [0.5]),
     ]
 )
 
@@ -70,21 +70,26 @@ if __name__ == "__main__":
 
     dataset = SlothDataset(transforms=transforms)
     dataloader = DataLoader(dataset, batch_size=bsz, shuffle=True)
-    iters = ceil(len(dataset) // (bsz * acc))
+    iters = math.floor(len(dataset) // (bsz * acc))
 
     model = UnconditionalEfficientUnet(
         sample_size=64,
         in_channels=3,
         out_channels=3,
-        block_out_channels=(32, 64, 128, 256),
+        block_out_channels=(32, 64, 128, 256, 512),
         layers_per_block=3,
-        num_heads=(None, 1, 2, 4),
+        num_heads=(None, 1, 2, 4, 8),
     )
+    print(model)
 
     noise_scheduler = DDPM(num_train_timesteps=1000)
-    optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-2, weight_decay=0.0)
     lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer=optimizer, T_0=iters, T_mult=2, eta_min=1e-6
+        optimizer=optimizer,
+        T_0=iters,
+        T_mult=2,
+        eta_min=1e-7,
+        verbose=True,
     )
 
     ema_model = EMAModel(model=model)
