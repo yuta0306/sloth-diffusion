@@ -76,19 +76,19 @@ if __name__ == "__main__":
         sample_size=64,
         in_channels=3,
         out_channels=3,
-        block_out_channels=(32, 64, 128, 256, 512),
+        block_out_channels=(32, 64, 128, 256),
         layers_per_block=3,
-        num_heads=(None, 1, 2, 4, 8),
+        num_heads=(None, 1, 2, 4),
     )
     print(model)
 
     noise_scheduler = DDPM(num_train_timesteps=1000)
-    optimizer = optim.AdamW(model.parameters(), lr=1e-2, weight_decay=0.0)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.0)
     lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
         optimizer=optimizer,
         T_0=iters,
         T_mult=2,
-        eta_min=1e-7,
+        eta_min=1e-6,
     )
 
     ema_model = EMAModel(model=model)
