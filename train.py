@@ -89,7 +89,6 @@ if __name__ == "__main__":
         T_0=iters,
         T_mult=2,
         eta_min=1e-7,
-        verbose=True,
     )
 
     ema_model = EMAModel(model=model)
