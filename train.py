@@ -65,7 +65,7 @@ class SlothDataset(Dataset):
 
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    bsz = 64
+    bsz = 128
     acc = 1
 
     dataset = SlothDataset(transforms=transforms)
