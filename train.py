@@ -5,6 +5,7 @@ import einops
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
@@ -72,13 +73,24 @@ if __name__ == "__main__":
     iters = math.floor(len(dataset) // (bsz * acc))
 
     dim = 128
-    model = UnconditionalEfficientUnet(
+    # model = UnconditionalEfficientUnet(
+    #     sample_size=64,
+    #     in_channels=3,
+    #     out_channels=3,
+    #     block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
+    #     layers_per_block=3,
+    #     num_heads=(None, 4, 8, 8),
+    # )
+    model = UNet(
         sample_size=64,
         in_channels=3,
         out_channels=3,
-        block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
+        down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock, AttnDownBlock),
+        up_block_types=(UpBlock, AttnUpBlock, AttnUpBlock, AttnUpBlock),
         layers_per_block=3,
-        num_heads=(None, 4, 8, 8),
+        block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
+        mid_block_scale_factor=2**-0.5,
+        groups=8,
     )
     print(model)
 
