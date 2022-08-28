@@ -86,11 +86,12 @@ if __name__ == "__main__":
         in_channels=3,
         out_channels=3,
         down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock, AttnDownBlock),
-        up_block_types=(UpBlock, AttnUpBlock, AttnUpBlock, AttnUpBlock),
+        up_block_types=(AttnUpBlock, AttnUpBlock, AttnUpBlock, UpBlock),
         layers_per_block=3,
         block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
         mid_block_scale_factor=2**-0.5,
-        groups=8,
+        groups=32,
+        use_checkpoint=True,
     )
     print(model)
 
