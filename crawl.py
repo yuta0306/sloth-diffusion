@@ -1,7 +1,7 @@
 import base64
 import os
 import time
-from typing import Dict, Final, Generator
+from typing import Dict, Final, Generator, List, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -26,10 +26,11 @@ class Crawler:
 
     def search(
         self, keyword: str, max_num: int = 100, start: int = 1
-    ) -> Dict[str, Dict[str, str]]:
+    ) -> Tuple[Dict[str, Dict[str, str]], List[str]]:
         print(f"Search `{keyword}` image for Google")
 
         res, total = {}, 0
+        keywords = set()
 
         for i, param in enumerate(self.queries(keyword=keyword, start=start), 1):
             if self.use_splash:
@@ -67,6 +68,9 @@ class Crawler:
             #     [elm.get("data-ved"), elm.select_one("img.rg_i")] for elm in elements
             # ]
             # print("Image Tags:", len(image_tags))
+            kws_tags = soup.select("span.VlHyHc")
+            kws = [tag.text for tag in kws_tags]
+            keywords.update(kws)
             elements = soup.select(".isv-r")
             elements = [
                 elm
@@ -99,6 +103,7 @@ class Crawler:
                 break
             if i % 2 == 0:
                 print(f"{i} LOOPs: Fetched {total} images")
+                print(f"Fetched {len(keywords)} Keywords")
 
         print(f"Fetched {total} images")
 
@@ -110,7 +115,7 @@ class Crawler:
             }
             for key, data in res.items()
         }
-        return res
+        return res, list(keywords)
 
     def queries(self, keyword: str, start: int) -> Generator:
         page = start
@@ -176,25 +181,26 @@ class Crawler:
 
 if __name__ == "__main__":
     crawler = Crawler(use_splash=True)
-    for prefix in (
-        "",
-        "cute",
-        "animal",
-        "baby",
-        "zoo",
-        "columbia",
-        "eating",
-        "sleeping",
-    ):
-        try:
-            res = crawler.search(keyword=f"{prefix}+sloth", max_num=10000, start=1)
-        except KeyboardInterrupt:
-            pass
-        finally:
-            save_dir = "images"
+    used = []
+    candidates = []
+    prefix = None
+    while True:
+        keyword = f"{prefix}+sloth" if prefix is not None else "sloth"
+        res, keywords = crawler.search(keyword=keyword, max_num=1000, start=1)
 
-            for filename, data in tqdm(res.items()):
-                if (url := data.get("url")) is not None:
-                    crawler.save(url, save_dir=save_dir, filename=filename)
-                elif (image := data.get("data")) is not None:
-                    crawler.save_by_base64(image, save_dir=save_dir, filename=filename)
+        unused = [kw for kw in keywords if kw not in used]
+        candidates += unused
+
+        save_dir = "images"
+
+        for filename, data in tqdm(res.items()):
+            if (url := data.get("url")) is not None:
+                crawler.save(url, save_dir=save_dir, filename=filename)
+            elif (image := data.get("data")) is not None:
+                crawler.save_by_base64(image, save_dir=save_dir, filename=filename)
+
+        prefix = candidates.pop()
+        used.append(prefix)
+        if len(candidates) == 0:
+            print("complete")
+            break

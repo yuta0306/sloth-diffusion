@@ -2,9 +2,11 @@ import math
 import os
 
 import einops
+import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+from diffusers import UNet2DModel
 from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
@@ -81,17 +83,34 @@ if __name__ == "__main__":
     #     layers_per_block=3,
     #     num_heads=(None, 4, 8, 8),
     # )
-    model = UNet(
+    # model = UNet(
+    #     sample_size=64,
+    #     in_channels=3,
+    #     out_channels=3,
+    #     down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock),
+    #     up_block_types=(AttnUpBlock, AttnUpBlock, UpBlock),
+    #     layers_per_block=3,
+    #     block_out_channels=(dim, dim * 2, dim * 4),
+    #     mid_block_scale_factor=2**-0.5,
+    #     groups=32,
+    #     use_checkpoint=True,
+    # )
+    model = UNet2DModel(
         sample_size=64,
         in_channels=3,
         out_channels=3,
-        down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock),
-        up_block_types=(AttnUpBlock, AttnUpBlock, UpBlock),
         layers_per_block=3,
         block_out_channels=(dim, dim * 2, dim * 4),
-        mid_block_scale_factor=2**-0.5,
-        groups=32,
-        use_checkpoint=True,
+        down_block_types=(
+            "DownBlock2D",
+            "AttnDownBlock2D",
+            "AttnDownBlock2D",
+        ),
+        up_block_types=(
+            "AttnUpBlock2D",
+            "AttnUpBlock2D",
+            "UpBlock2D",
+        ),
     )
     print(model)
 
