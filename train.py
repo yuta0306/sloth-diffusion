@@ -65,14 +65,14 @@ class SlothDataset(Dataset):
 
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    bsz = 128
+    bsz = 64
     acc = 1
 
     dataset = SlothDataset(transforms=transforms)
     dataloader = DataLoader(dataset, batch_size=bsz, shuffle=True)
     iters = math.floor(len(dataset) // (bsz * acc))
 
-    dim = 64
+    dim = 32
     # model = UnconditionalEfficientUnet(
     #     sample_size=64,
     #     in_channels=3,
