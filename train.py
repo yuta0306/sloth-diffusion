@@ -65,6 +65,12 @@ class SlothDataset(Dataset):
         return item
 
 
+class LightningModel(pl.LightningModule):
+    def __init__(self, unet) -> None:
+        super().__init__()
+        self.unet = unet
+
+
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     bsz = 32
@@ -75,14 +81,6 @@ if __name__ == "__main__":
     iters = math.floor(len(dataset) // (bsz * acc))
 
     dim = 32
-    # model = UnconditionalEfficientUnet(
-    #     sample_size=64,
-    #     in_channels=3,
-    #     out_channels=3,
-    #     block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
-    #     layers_per_block=3,
-    #     num_heads=(None, 4, 8, 8),
-    # )
     # model = UNet(
     #     sample_size=64,
     #     in_channels=3,
@@ -95,21 +93,27 @@ if __name__ == "__main__":
     #     groups=32,
     #     use_checkpoint=True,
     # )
-    model = UNet2DModel(
+    model = UNet(
         sample_size=64,
         in_channels=3,
         out_channels=3,
-        layers_per_block=3,
-        block_out_channels=(dim, dim * 2, dim * 4),
+        layers_per_block=2,
+        block_out_channels=(128, 128, 256, 256, 512, 512),
         down_block_types=(
-            "DownBlock2D",
-            "AttnDownBlock2D",
-            "AttnDownBlock2D",
+            DownBlock,
+            DownBlock,
+            DownBlock,
+            DownBlock,
+            AttnDownBlock,
+            DownBlock,
         ),
         up_block_types=(
-            "AttnUpBlock2D",
-            "AttnUpBlock2D",
-            "UpBlock2D",
+            UpBlock,
+            AttnUpBlock,
+            UpBlock,
+            UpBlock,
+            UpBlock,
+            UpBlock,
         ),
     )
     print(model)

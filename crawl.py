@@ -180,13 +180,13 @@ class Crawler:
 
 
 if __name__ == "__main__":
-    crawler = Crawler(use_splash=True)
     used = []
     candidates = []
     prefix = None
     while True:
+        crawler = Crawler(use_splash=True)
         keyword = f"{prefix}+sloth" if prefix is not None else "sloth"
-        res, keywords = crawler.search(keyword=keyword, max_num=1000, start=1)
+        res, keywords = crawler.search(keyword=keyword, max_num=5000, start=1)
 
         unused = [kw for kw in keywords if kw not in used]
         candidates += unused
