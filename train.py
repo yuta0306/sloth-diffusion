@@ -72,7 +72,7 @@ if __name__ == "__main__":
     dataloader = DataLoader(dataset, batch_size=bsz, shuffle=True)
     iters = math.floor(len(dataset) // (bsz * acc))
 
-    dim = 128
+    dim = 64
     # model = UnconditionalEfficientUnet(
     #     sample_size=64,
     #     in_channels=3,
