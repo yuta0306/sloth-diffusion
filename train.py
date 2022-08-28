@@ -17,7 +17,6 @@ from torchvision.transforms import (
     CenterCrop,
     Compose,
     InterpolationMode,
-    Normalize,
     RandomHorizontalFlip,
     Resize,
     ToTensor,
@@ -72,23 +71,24 @@ if __name__ == "__main__":
     dataloader = DataLoader(dataset, batch_size=bsz, shuffle=True)
     iters = math.floor(len(dataset) // (bsz * acc))
 
+    dim = 512
     model = UnconditionalEfficientUnet(
         sample_size=64,
         in_channels=3,
         out_channels=3,
-        block_out_channels=(32, 64, 128, 256),
+        block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
         layers_per_block=3,
-        num_heads=(None, 1, 2, 4),
+        num_heads=(None, 8, 8, 8),
     )
     print(model)
 
     noise_scheduler = DDPM(num_train_timesteps=1000)
-    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.0)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.0)
     lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
         optimizer=optimizer,
         T_0=iters,
         T_mult=2,
-        eta_min=1e-6,
+        eta_min=1e-7,
     )
 
     ema_model = EMAModel(model=model)
