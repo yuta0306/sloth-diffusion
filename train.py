@@ -7,17 +7,24 @@ import pytorch_lightning.loggers as pl_loggers
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from diffusions.models import (AttnDownBlock, AttnUpBlock, DownBlock, UNet,
-                               UpBlock)
+from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
+
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 # from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
 from diffusions.pipelines import DDPMPipeline
 from diffusions.schedulers import DDPM
+
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
-from torchvision.transforms import (CenterCrop, Compose, InterpolationMode,
-                                    RandomHorizontalFlip, Resize, ToTensor)
+from torchvision.transforms import (
+    CenterCrop,
+    Compose,
+    InterpolationMode,
+    RandomHorizontalFlip,
+    Resize,
+    ToTensor,
+)
 
 
 def get_transforms(phase: str = "train"):
@@ -108,18 +115,16 @@ class LightningModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         noise = torch.randn(batch.shape).to(batch.device)
         loss = 0.0
-        for timestep in range(self.noise_scheduler.num_train_steps):
-            timesteps = (
-                torch.zeros((batch.size(0),), device=batch.device)
-                .fill_(timestep)
-                .long()
-            )
+        timesteps = torch.randint(
+            0,
+            self.noise_scheduler.num_train_steps,
+            (batch.size(0),),
+            device=batch.device,
+        ).long()
 
-            noisy_images = self.noise_scheduler.add_noise(batch, noise, timesteps)
-            noise_pred = self(noisy_images, timesteps)["sample"]
-            loss = loss + self.criterion(noise_pred, noise)
-
-        loss = loss / (timestep + 1)
+        noisy_images = self.noise_scheduler.add_noise(batch, noise, timesteps)
+        noise_pred = self(noisy_images, timesteps)["sample"]
+        loss = loss + self.criterion(noise_pred, noise)
 
         self.log("valid/loss", loss)
 
@@ -263,7 +268,7 @@ if __name__ == "__main__":
         max_epochs=-1,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
         gradient_clip_val=1.0,
-        # gpus=-1,
+        gpus=-1,
         accumulate_grad_batches=acc,
         detect_anomaly=True,
         deterministic=False,
