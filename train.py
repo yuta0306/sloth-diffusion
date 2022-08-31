@@ -7,24 +7,17 @@ import pytorch_lightning.loggers as pl_loggers
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
-
+from diffusions.models import (AttnDownBlock, AttnUpBlock, DownBlock, UNet,
+                               UpBlock)
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 # from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
 from diffusions.pipelines import DDPMPipeline
 from diffusions.schedulers import DDPM
-
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
-from torchvision.transforms import (
-    CenterCrop,
-    Compose,
-    InterpolationMode,
-    RandomHorizontalFlip,
-    Resize,
-    ToTensor,
-)
+from torchvision.transforms import (CenterCrop, Compose, InterpolationMode,
+                                    RandomHorizontalFlip, Resize, ToTensor)
 
 
 def get_transforms(phase: str = "train"):
@@ -268,6 +261,7 @@ if __name__ == "__main__":
         logger=logger,
         callbacks=checkpoint,
         max_epochs=-1,
+        accelerator="gpu" if torch.cuda.is_available() else "cpu",
         gradient_clip_val=1.0,
         # gpus=-1,
         accumulate_grad_batches=acc,
