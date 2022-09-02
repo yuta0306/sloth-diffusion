@@ -2,7 +2,6 @@ import os
 import sys
 from typing import List
 
-import einops
 import numpy as np
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
@@ -10,11 +9,12 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
+from diffusions.models.imagen import EfficientDownBlock, EfficientUpBlock
 
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 # from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
-from diffusions.pipelines import DDPMPipeline
-from diffusions.schedulers import DDPM
+from diffusions.pipelines import DDIMPipeline
+from diffusions.schedulers import DDIM
 
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
@@ -77,7 +77,11 @@ class SlothDataset(Dataset):
 
 class LightningModel(pl.LightningModule):
     def __init__(
-        self, unet: UNet, iters_per_epoch: int, noise_scheduler: DDPM, lr: float = 1e-4
+        self,
+        unet: UNet,
+        iters_per_epoch: int,
+        noise_scheduler: DDIM,
+        lr: float = 1e-4,
     ) -> None:
         super().__init__()
         self.unet = unet
@@ -86,7 +90,7 @@ class LightningModel(pl.LightningModule):
         self.criterion = F.mse_loss
         self.lr = lr
 
-        self.pipeline = DDPMPipeline(unet=unet, scheduler=noise_scheduler)
+        self.pipeline = DDIMPipeline(unet=unet, scheduler=noise_scheduler)
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(
@@ -156,16 +160,15 @@ class LightningModel(pl.LightningModule):
         generator = torch.manual_seed(0)
         os.makedirs(f"results/epoch_{self.current_epoch}", exist_ok=True)
         for i in range(4):
-            images = self.pipeline(batch_size=1, generator=generator)["sample"]
-            images_processed = (
-                einops.rearrange((images * 255).round(), "b c h w -> b h w c")
-                .numpy()
-                .astype("uint8")
-            )
-            image = images_processed[0]
-            img = Image.fromarray(image, mode="RGB")
-            img.save(
-                os.path.join("results", f"epoch_{self.current_epoch}", f"image_{i}.jpg")
+            outs = []
+            _ = self.pipeline(batch_size=1, generator=generator, out=outs)["sample"]
+            seqs = list(list(zip(*outs))[0])
+            seqs[0].save(
+                os.path.join(
+                    "results", f"epoch_{self.current_epoch}", f"image_{i}.gif"
+                ),
+                save_all=True,
+                append_images=seqs[1:],
             )
 
         self.log("valid/epoch_loss", loss)
@@ -223,43 +226,47 @@ if __name__ == "__main__":
     dm = SlothRetriever(batch_size=bsz)
 
     dim = 32
-    model = UNet(
-        sample_size=64,
-        in_channels=3,
-        out_channels=3,
-        down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock),
-        up_block_types=(AttnUpBlock, AttnUpBlock, UpBlock),
-        layers_per_block=3,
-        block_out_channels=(dim, dim * 2, dim * 4),
-        mid_block_scale_factor=2**-0.5,
-        groups=32,
-        use_checkpoint=False,
-    )
     # model = UNet(
     #     sample_size=64,
     #     in_channels=3,
     #     out_channels=3,
-    #     layers_per_block=2,
-    #     block_out_channels=(128, 128, 256, 256, 512, 512),
-    #     down_block_types=(
-    #         DownBlock,
-    #         DownBlock,
-    #         DownBlock,
-    #         DownBlock,
-    #         AttnDownBlock,
-    #         DownBlock,
-    #     ),
-    #     up_block_types=(
-    #         UpBlock,
-    #         AttnUpBlock,
-    #         UpBlock,
-    #         UpBlock,
-    #         UpBlock,
-    #         UpBlock,
-    #     ),
+    #     down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock),
+    #     up_block_types=(AttnUpBlock, AttnUpBlock, UpBlock),
+    #     layers_per_block=3,
+    #     block_out_channels=(dim, dim * 2, dim * 4),
+    #     mid_block_scale_factor=2**-0.5,
+    #     groups=32,
+    #     use_checkpoint=False,
     # )
+    model = UNet(
+        sample_size=64,
+        in_channels=3,
+        out_channels=3,
+        layers_per_block=2,
+        block_out_channels=(128, 128, 256, 256, 512, 512),
+        down_block_types=(
+            DownBlock,
+            EfficientDownBlock,
+            EfficientDownBlock,
+            EfficientDownBlock,
+            AttnDownBlock,
+            DownBlock,
+        ),
+        up_block_types=(
+            UpBlock,
+            AttnUpBlock,
+            EfficientUpBlock,
+            EfficientUpBlock,
+            EfficientUpBlock,
+            UpBlock,
+        ),
+    )
 
-    noise_scheduler = DDPM(num_train_timesteps=1000, dynamic_threshold=True)
+    noise_scheduler = DDIM(
+        num_train_timesteps=1000,
+        scheduler_type="cosine",
+        dynamic_threshold=True,
+    )
 
     model = LightningModel(
         unet=model,
@@ -293,9 +300,6 @@ if __name__ == "__main__":
         devices=-1,
         gradient_clip_val=1.0,
         accumulate_grad_batches=acc,
-        detect_anomaly=True,
-        deterministic=False,
-        benchmark=True,
     )
 
     trainer.fit(model=model, datamodule=dm, ckpt_path=ckpt)

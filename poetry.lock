@@ -190,6 +190,7 @@ develop = false
 [package.dependencies]
 einops = "^0.4.1"
 numpy = ">=1.21.0"
+Pillow = "^9.2.0"
 torch = "^1.12.0"
 tqdm = "^4.64.0"
 
@@ -197,7 +198,7 @@ tqdm = "^4.64.0"
 type = "git"
 url = "https://github.com/yuta0306/diffusions.git"
 reference = "main"
-resolved_reference = "ede07277f19eeafdcd19a338433bb1bd3cecf878"
+resolved_reference = "1d193d6730eb36ee4cff6dda231cdc29d98ccbeb"
 
 [[package]]
 name = "docker-pycreds"
