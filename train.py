@@ -259,7 +259,7 @@ if __name__ == "__main__":
     #     ),
     # )
 
-    noise_scheduler = DDPM(num_train_timesteps=1000)
+    noise_scheduler = DDPM(num_train_timesteps=1000, dynamic_threshold=True)
 
     model = LightningModel(
         unet=model,
