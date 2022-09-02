@@ -233,7 +233,7 @@ if __name__ == "__main__":
         block_out_channels=(dim, dim * 2, dim * 4),
         mid_block_scale_factor=2**-0.5,
         groups=32,
-        use_checkpoint=True,
+        use_checkpoint=False,
     )
     # model = UNet(
     #     sample_size=64,
