@@ -1,6 +1,8 @@
 import os
+import sys
 from typing import List
 
+import einops
 import numpy as np
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
@@ -25,6 +27,10 @@ from torchvision.transforms import (
     Resize,
     ToTensor,
 )
+
+ckpt = None
+if len(sys.argv) > 1:
+    ckpt = sys.argv[1]
 
 
 def get_transforms(phase: str = "train"):
@@ -147,6 +153,21 @@ class LightningModel(pl.LightningModule):
             loss = loss + out["loss"]
         loss = loss / i
 
+        generator = torch.manual_seed(0)
+        os.makedirs(f"results/epoch_{self.current_epoch}", exist_ok=True)
+        for i in range(4):
+            images = pipeline(batch_size=1, generator=generator)["sample"]
+            images_processed = (
+                einops.rearrange((images * 255).round(), "b c h w -> b h w c")
+                .numpy()
+                .astype("uint8")
+            )
+            image = images_processed[0]
+            img = Image.fromarray(image, mode="RGB")
+            img.save(
+                os.path.join("results", f"epoch_{self.current_epoch}", f"image_{i}.jpg")
+            )
+
         self.log("valid/epoch_loss", loss)
 
 
@@ -258,34 +279,21 @@ if __name__ == "__main__":
     checkpoint_dir = "weights"
     os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoint = pl.callbacks.ModelCheckpoint(
-        monitor="valid/epoch_loss",
         dirpath=checkpoint_dir,
-        mode="min",
+        filename="{epoch}-{valid/epoch_loss:.3f}",
+        save_top_k=-1,
     )
     trainer = pl.Trainer(
         logger=logger,
         callbacks=checkpoint,
         max_epochs=-1,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
+        devices=-1,
         gradient_clip_val=1.0,
-        gpus=-1,
         accumulate_grad_batches=acc,
         detect_anomaly=True,
         deterministic=False,
         benchmark=True,
     )
 
-    trainer.fit(model=model, datamodule=dm)
-
-    # generator = torch.manual_seed(0)
-    # os.makedirs(f"results/epoch_{epoch}", exist_ok=True)
-    # for i in range(4):
-    #     images = pipeline(batch_size=1, generator=generator)["sample"]
-    #     images_processed = (
-    #         einops.rearrange((images * 255).round(), "b c h w -> b h w c")
-    #         .numpy()
-    #         .astype("uint8")
-    #     )
-    #     image = images_processed[0]
-    #     img = Image.fromarray(image, mode="RGB")
-    #     img.save(os.path.join("results", f"epoch_{epoch}", f"image_{i}.jpg"))
+    trainer.fit(model=model, datamodule=dm, ckpt_path=ckpt)
