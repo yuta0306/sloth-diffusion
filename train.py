@@ -223,46 +223,49 @@ if __name__ == "__main__":
     dm = SlothRetriever(batch_size=bsz)
 
     dim = 32
-    # model = UNet(
-    #     sample_size=64,
-    #     in_channels=3,
-    #     out_channels=3,
-    #     down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock),
-    #     up_block_types=(AttnUpBlock, AttnUpBlock, UpBlock),
-    #     layers_per_block=3,
-    #     block_out_channels=(dim, dim * 2, dim * 4),
-    #     mid_block_scale_factor=2**-0.5,
-    #     groups=32,
-    #     use_checkpoint=True,
-    # )
     model = UNet(
         sample_size=64,
         in_channels=3,
         out_channels=3,
-        layers_per_block=2,
-        block_out_channels=(128, 128, 256, 256, 512, 512),
-        down_block_types=(
-            DownBlock,
-            DownBlock,
-            DownBlock,
-            DownBlock,
-            AttnDownBlock,
-            DownBlock,
-        ),
-        up_block_types=(
-            UpBlock,
-            AttnUpBlock,
-            UpBlock,
-            UpBlock,
-            UpBlock,
-            UpBlock,
-        ),
+        down_block_types=(DownBlock, AttnDownBlock, AttnDownBlock),
+        up_block_types=(AttnUpBlock, AttnUpBlock, UpBlock),
+        layers_per_block=3,
+        block_out_channels=(dim, dim * 2, dim * 4),
+        mid_block_scale_factor=2**-0.5,
+        groups=32,
+        use_checkpoint=True,
     )
+    # model = UNet(
+    #     sample_size=64,
+    #     in_channels=3,
+    #     out_channels=3,
+    #     layers_per_block=2,
+    #     block_out_channels=(128, 128, 256, 256, 512, 512),
+    #     down_block_types=(
+    #         DownBlock,
+    #         DownBlock,
+    #         DownBlock,
+    #         DownBlock,
+    #         AttnDownBlock,
+    #         DownBlock,
+    #     ),
+    #     up_block_types=(
+    #         UpBlock,
+    #         AttnUpBlock,
+    #         UpBlock,
+    #         UpBlock,
+    #         UpBlock,
+    #         UpBlock,
+    #     ),
+    # )
 
     noise_scheduler = DDPM(num_train_timesteps=1000)
 
     model = LightningModel(
-        unet=model, iters_per_epoch=iters, noise_scheduler=noise_scheduler, lr=lr
+        unet=model,
+        iters_per_epoch=iters,
+        noise_scheduler=noise_scheduler,
+        lr=lr,
     )
 
     # ema_model = EMAModel(model=model)
@@ -278,8 +281,9 @@ if __name__ == "__main__":
     os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoint = pl.callbacks.ModelCheckpoint(
         dirpath=checkpoint_dir,
-        filename="{epoch}-{valid/epoch_loss:.3f}",
+        filename="epoch={epoch}-loss={valid/epoch_loss:.3f}",
         save_top_k=-1,
+        auto_insert_metric_name=False,
     )
     trainer = pl.Trainer(
         logger=logger,
