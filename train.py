@@ -71,6 +71,7 @@ class SlothDataset(Dataset):
 
         if self.transforms is not None:
             item = self.transforms(item)
+            item = item * 2 - 1.0
 
         return item
 
@@ -224,11 +225,10 @@ if __name__ == "__main__":
     bsz = 32
     acc = 1
     iters = 2000
-    lr = 1e-4
+    lr = 2e-6
 
     dm = SlothRetriever(batch_size=bsz)
 
-    dim = 32
     # model = UNet(
     #     sample_size=64,
     #     in_channels=3,
@@ -241,12 +241,13 @@ if __name__ == "__main__":
     #     groups=32,
     #     use_checkpoint=False,
     # )
+    dim = 128
     model = UNet(
         sample_size=64,
         in_channels=3,
         out_channels=3,
         layers_per_block=2,
-        block_out_channels=(128, 128, 256, 256, 512, 512),
+        block_out_channels=(dim, dim, dim * 2, dim * 2, dim * 4, dim * 4),
         down_block_types=(
             DownBlock,
             DownBlock,
@@ -273,7 +274,9 @@ if __name__ == "__main__":
     noise_scheduler = DDPM(
         num_train_timesteps=1000,
         scheduler_type="linear",
-        dynamic_threshold=False,
+        dynamic_threshold=True,
+        beta_start=0.0015,
+        beta_end=0.0195,
     )
 
     model = LightningModel(
@@ -289,7 +292,7 @@ if __name__ == "__main__":
     # sr_model = sr_model.cpu()
 
     logger = pl_loggers.WandbLogger(
-        name="sloth-diffusion",
+        name="ddpm-base-model",
         project="sloth-diffusion",
     )
     checkpoint_dir = "weights"
