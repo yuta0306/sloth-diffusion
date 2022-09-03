@@ -272,8 +272,8 @@ if __name__ == "__main__":
     # )
     noise_scheduler = DDPM(
         num_train_timesteps=1000,
-        scheduler_type="cosine",
-        dynamic_threshold=True,
+        scheduler_type="linear",
+        dynamic_threshold=False,
     )
 
     model = LightningModel(
