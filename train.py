@@ -13,8 +13,8 @@ from diffusions.models.imagen import EfficientDownBlock, EfficientUpBlock
 
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 # from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
-from diffusions.pipelines import DDIMPipeline
-from diffusions.schedulers import DDIM
+from diffusions.pipelines import DDIMPipeline, DDPMPipeline
+from diffusions.schedulers import DDIM, DDPM
 
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
@@ -80,7 +80,7 @@ class LightningModel(pl.LightningModule):
         self,
         unet: UNet,
         iters_per_epoch: int,
-        noise_scheduler: DDIM,
+        noise_scheduler,
         lr: float = 1e-4,
     ) -> None:
         super().__init__()
@@ -90,7 +90,10 @@ class LightningModel(pl.LightningModule):
         self.criterion = F.mse_loss
         self.lr = lr
 
-        self.pipeline = DDIMPipeline(unet=unet, scheduler=noise_scheduler)
+        if isinstance(noise_scheduler, DDIM):
+            self.pipeline = DDIMPipeline(unet=unet, scheduler=noise_scheduler)
+        else:
+            self.pipeline = DDPMPipeline(unet=unet, scheduler=noise_scheduler)
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(
@@ -267,6 +270,9 @@ if __name__ == "__main__":
         scheduler_type="cosine",
         dynamic_threshold=True,
     )
+    # noise_scheduler = DDPM(
+    #     num_train_timesteps=1000, scheduler_type="cosine", dynamic_threshold=True
+    # )
 
     model = LightningModel(
         unet=model,
@@ -297,7 +303,7 @@ if __name__ == "__main__":
         callbacks=checkpoint,
         max_epochs=-1,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
-        devices=-1,
+        devices=1,
         gradient_clip_val=1.0,
         accumulate_grad_batches=acc,
     )

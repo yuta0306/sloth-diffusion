@@ -180,7 +180,7 @@ dev = ["hf-doc-builder", "modelcards", "tensorboard", "datasets", "accelerate", 
 
 [[package]]
 name = "diffusions"
-version = "0.1.0"
+version = "0.1.6"
 description = "Diffusion models"
 category = "main"
 optional = false
@@ -198,7 +198,7 @@ tqdm = "^4.64.0"
 type = "git"
 url = "https://github.com/yuta0306/diffusions.git"
 reference = "main"
-resolved_reference = "1d193d6730eb36ee4cff6dda231cdc29d98ccbeb"
+resolved_reference = "259e6601908829ca554b66c05b159ea13566b40b"
 
 [[package]]
 name = "docker-pycreds"
