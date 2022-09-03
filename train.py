@@ -265,14 +265,16 @@ if __name__ == "__main__":
         ),
     )
 
-    noise_scheduler = DDIM(
+    # noise_scheduler = DDIM(
+    #     num_train_timesteps=1000,
+    #     scheduler_type="cosine",
+    #     dynamic_threshold=False,
+    # )
+    noise_scheduler = DDPM(
         num_train_timesteps=1000,
         scheduler_type="cosine",
         dynamic_threshold=True,
     )
-    # noise_scheduler = DDPM(
-    #     num_train_timesteps=1000, scheduler_type="cosine", dynamic_threshold=True
-    # )
 
     model = LightningModel(
         unet=model,
