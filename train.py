@@ -223,7 +223,7 @@ class SlothRetriever(pl.LightningDataModule):
 
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    bsz = 32
+    bsz = 16
     acc = 1
     iters = 2000
     lr = 1e-4
