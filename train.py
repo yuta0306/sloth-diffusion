@@ -8,19 +8,26 @@ import pytorch_lightning.loggers as pl_loggers
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from diffusions.models import (AttnDownBlock, AttnUpBlock, DownBlock, UNet,
-                               UpBlock)
+from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 from diffusions.models.imagen import EfficientDownBlock, EfficientUpBlock
+
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 # from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
 from diffusions.pipelines import DDIMPipeline, DDPMPipeline
 from diffusions.schedulers import DDIM, DDPM
+
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
-from torchvision.transforms import (CenterCrop, Compose, InterpolationMode,
-                                    Normalize, RandomHorizontalFlip, Resize,
-                                    ToTensor)
+from torchvision.transforms import (
+    CenterCrop,
+    Compose,
+    InterpolationMode,
+    Normalize,
+    RandomHorizontalFlip,
+    Resize,
+    ToTensor,
+)
 
 ckpt = None
 if len(sys.argv) > 1:
@@ -157,7 +164,7 @@ class LightningModel(pl.LightningModule):
 
         generator = torch.manual_seed(0)
         os.makedirs(f"results/epoch_{self.current_epoch}", exist_ok=True)
-        for i in range(4):
+        for i in range(2):
             outs = []
             _ = self.pipeline(batch_size=1, generator=generator, out=outs)["sample"]
             seqs = list(list(zip(*outs))[0])
@@ -255,6 +262,7 @@ if __name__ == "__main__":
             UpBlock,
         ),
         head_dim=32,
+        memory_efficient=True,
     )
 
     # noise_scheduler = DDIM(
@@ -302,6 +310,7 @@ if __name__ == "__main__":
         devices=-1,
         gradient_clip_val=1.0,
         accumulate_grad_batches=acc,
+        precision=16,
     )
 
     trainer.fit(model=model, datamodule=dm, ckpt_path=ckpt)
