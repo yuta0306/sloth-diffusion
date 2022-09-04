@@ -225,7 +225,7 @@ if __name__ == "__main__":
     bsz = 32
     acc = 1
     iters = 2000
-    lr = 2e-6
+    lr = 1e-4
 
     dm = SlothRetriever(batch_size=bsz)
 
@@ -241,29 +241,26 @@ if __name__ == "__main__":
     #     groups=32,
     #     use_checkpoint=False,
     # )
-    dim = 128
+    dim = 224
     model = UNet(
         sample_size=64,
         in_channels=3,
         out_channels=3,
         layers_per_block=2,
-        block_out_channels=(dim, dim, dim * 2, dim * 2, dim * 4, dim * 4),
+        block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
         down_block_types=(
-            DownBlock,
-            DownBlock,
-            DownBlock,
             DownBlock,
             AttnDownBlock,
             DownBlock,
+            AttnDownBlock,
         ),
         up_block_types=(
+            AttnUpBlock,
             UpBlock,
             AttnUpBlock,
             UpBlock,
-            UpBlock,
-            UpBlock,
-            UpBlock,
         ),
+        head_dim=32,
     )
 
     # noise_scheduler = DDIM(
@@ -274,7 +271,7 @@ if __name__ == "__main__":
     noise_scheduler = DDPM(
         num_train_timesteps=1000,
         scheduler_type="linear",
-        dynamic_threshold=True,
+        dynamic_threshold=False,
         beta_start=0.0015,
         beta_end=0.0195,
     )
@@ -292,7 +289,7 @@ if __name__ == "__main__":
     # sr_model = sr_model.cpu()
 
     logger = pl_loggers.WandbLogger(
-        name="ddpm-base-model",
+        name="ddpm-stable-diffusion-celeba-model",
         project="sloth-diffusion",
     )
     checkpoint_dir = "weights"
@@ -308,7 +305,7 @@ if __name__ == "__main__":
         callbacks=checkpoint,
         max_epochs=-1,
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
-        devices=1,
+        devices=-1,
         gradient_clip_val=1.0,
         accumulate_grad_batches=acc,
     )

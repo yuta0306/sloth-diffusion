@@ -41,13 +41,13 @@ class Crawler:
                 )
                 response = self.session.get(
                     "http://localhost:8050/render.html",
-                    params={"url": url, "wait": 2.0, "viewport": "full"},
+                    params={"url": url, "wait": 5.0, "viewport": "full"},
                 )
                 html = response.text
             else:
                 response = self.session.get(self.GOOGLE_SEARCH_URL, params=param)
                 html = response.text
-                time.sleep(2.0)
+                time.sleep(5.0)
 
             # print(response.status_code)
             # print(response.headers)
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     candidates = []
     prefix = None
     while True:
-        crawler = Crawler(use_splash=True)
+        crawler = Crawler(use_splash=False)
         keyword = f"{prefix}+sloth" if prefix is not None else "sloth"
         res, keywords = crawler.search(keyword=keyword, max_num=5000, start=1)
 
