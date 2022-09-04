@@ -8,25 +8,19 @@ import pytorch_lightning.loggers as pl_loggers
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
+from diffusions.models import (AttnDownBlock, AttnUpBlock, DownBlock, UNet,
+                               UpBlock)
 from diffusions.models.imagen import EfficientDownBlock, EfficientUpBlock
-
 # from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 # from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
 from diffusions.pipelines import DDIMPipeline, DDPMPipeline
 from diffusions.schedulers import DDIM, DDPM
-
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
-from torchvision.transforms import (
-    CenterCrop,
-    Compose,
-    InterpolationMode,
-    RandomHorizontalFlip,
-    Resize,
-    ToTensor,
-)
+from torchvision.transforms import (CenterCrop, Compose, InterpolationMode,
+                                    Normalize, RandomHorizontalFlip, Resize,
+                                    ToTensor)
 
 ckpt = None
 if len(sys.argv) > 1:
@@ -41,7 +35,7 @@ def get_transforms(phase: str = "train"):
                 CenterCrop(64),
                 RandomHorizontalFlip(),
                 ToTensor(),
-                # Normalize([0.5], [0.5]),
+                Normalize([0.5], [0.5]),
             ]
         )
     return Compose(
@@ -49,7 +43,7 @@ def get_transforms(phase: str = "train"):
             Resize(64, interpolation=InterpolationMode.BILINEAR),
             CenterCrop(64),
             ToTensor(),
-            # Normalize([0.5], [0.5]),
+            Normalize([0.5], [0.5]),
         ]
     )
 
@@ -71,7 +65,7 @@ class SlothDataset(Dataset):
 
         if self.transforms is not None:
             item = self.transforms(item)
-            item = item * 2 - 1.0
+            # item = item * 2 - 1.0
 
         return item
 
