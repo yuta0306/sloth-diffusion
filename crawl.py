@@ -47,7 +47,7 @@ class Crawler:
             else:
                 response = self.session.get(self.GOOGLE_SEARCH_URL, params=param)
                 html = response.text
-                time.sleep(5.0)
+                time.sleep(2.0)
 
             # print(response.status_code)
             # print(response.headers)

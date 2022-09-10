@@ -34,23 +34,21 @@ if len(sys.argv) > 1:
     ckpt = sys.argv[1]
 
 
-def get_transforms(phase: str = "train"):
+def get_transforms(phase: str = "train", sample_size: int = 64):
     if phase == "train":
         return Compose(
             [
-                Resize(64, interpolation=InterpolationMode.BILINEAR),
-                CenterCrop(64),
+                Resize(sample_size, interpolation=InterpolationMode.BILINEAR),
+                CenterCrop(sample_size),
                 RandomHorizontalFlip(),
                 ToTensor(),
-                Normalize([0.5], [0.5]),
             ]
         )
     return Compose(
         [
-            Resize(64, interpolation=InterpolationMode.BILINEAR),
-            CenterCrop(64),
+            Resize(sample_size, interpolation=InterpolationMode.BILINEAR),
+            CenterCrop(sample_size),
             ToTensor(),
-            Normalize([0.5], [0.5]),
         ]
     )
 
@@ -72,7 +70,7 @@ class SlothDataset(Dataset):
 
         if self.transforms is not None:
             item = self.transforms(item)
-            # item = item * 2 - 1.0
+            item = item * 2 - 1.0
 
         return item
 
@@ -224,11 +222,12 @@ class SlothRetriever(pl.LightningDataModule):
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     bsz = 16
-    acc = 1
-    iters = 2000
+    acc = 4  # 1
+    iters = 5000  # 2000
     lr = 1e-4
+    sample_size = 128
 
-    dm = SlothRetriever(batch_size=bsz)
+    dm = SlothRetriever(batch_size=bsz, sample_size=sample_size)
 
     # model = UNet(
     #     sample_size=64,
@@ -244,20 +243,18 @@ if __name__ == "__main__":
     # )
     dim = 224
     model = UNet(
-        sample_size=64,
+        sample_size=sample_size,
         in_channels=3,
         out_channels=3,
         layers_per_block=2,
-        block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
+        block_out_channels=(dim, dim * 2, dim * 4),
         down_block_types=(
             DownBlock,
             AttnDownBlock,
-            DownBlock,
             AttnDownBlock,
         ),
         up_block_types=(
             AttnUpBlock,
-            UpBlock,
             AttnUpBlock,
             UpBlock,
         ),
@@ -291,7 +288,7 @@ if __name__ == "__main__":
     # sr_model = sr_model.cpu()
 
     logger = pl_loggers.WandbLogger(
-        name="ddpm-stable-diffusion-celeba-model",
+        name="ddpm-3layers",
         project="sloth-diffusion",
     )
     checkpoint_dir = "weights"
