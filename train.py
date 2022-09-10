@@ -178,9 +178,10 @@ class LightningModel(pl.LightningModule):
 
 
 class SlothRetriever(pl.LightningDataModule):
-    def __init__(self, batch_size: int = 32) -> None:
+    def __init__(self, batch_size: int = 32, sample_size: int = 64) -> None:
         super().__init__()
         self.batch_size = batch_size
+        self.sample_size = sample_size
 
     def prepare_data(self) -> None:
         for top, _, filenames in os.walk("images"):
@@ -197,10 +198,12 @@ class SlothRetriever(pl.LightningDataModule):
         trn_idx = np.ones(len(self.files), dtype=bool)
         trn_idx[val_idx] = False
         self.validset = SlothDataset(
-            files=self.files[val_idx], transforms=get_transforms("valid")
+            files=self.files[val_idx],
+            transforms=get_transforms("valid", sample_size=self.sample_size),
         )
         self.trainset = SlothDataset(
-            files=self.files[trn_idx], transforms=get_transforms("train")
+            files=self.files[trn_idx],
+            transforms=get_transforms("train", sample_size=self.sample_size),
         )
 
     def train_dataloader(self):
