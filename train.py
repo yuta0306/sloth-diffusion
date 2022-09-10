@@ -228,7 +228,7 @@ if __name__ == "__main__":
     acc = 4  # 1
     iters = 5000  # 2000
     lr = 1e-4
-    sample_size = 128
+    sample_size = 64
 
     dm = SlothRetriever(batch_size=bsz, sample_size=sample_size)
 
