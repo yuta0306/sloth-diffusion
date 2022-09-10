@@ -1,7 +1,7 @@
 import base64
 import os
 import time
-from typing import Dict, Final, Generator, List, Tuple
+from typing import Dict, Generator, List, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -10,8 +10,8 @@ from tqdm import tqdm
 
 class Crawler:
 
-    GOOGLE_SEARCH_URL: Final[str] = "https://www.google.com/search"
-    GOOGLE_IMAGE_EVENT: Final[str] = "https://www.google.com/imgevent"
+    GOOGLE_SEARCH_URL: str = "https://www.google.com/search"
+    GOOGLE_IMAGE_EVENT: str = "https://www.google.com/imgevent"
     session: requests.Session
     use_splash: bool
 
