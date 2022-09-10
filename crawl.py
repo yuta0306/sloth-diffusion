@@ -81,8 +81,8 @@ class Crawler:
             image_tags = {elm.get("data-id"): elm.select_one("img") for elm in elements}
 
             def get_src(tag):
-                if (src := tag.get("src")) is not None:
-                    return src
+                if tag.get("src") is not None:
+                    return tag.get("src")
                 return tag.get("data-src")
 
             images = {id_: get_src(img) for [id_, img] in image_tags.items()}
@@ -197,7 +197,9 @@ if __name__ == "__main__":
             if data.get("url") is not None:
                 crawler.save(data.get("url"), save_dir=save_dir, filename=filename)
             elif data.get("data") is not None:
-                crawler.save_by_base64(data.get("data"), save_dir=save_dir, filename=filename)
+                crawler.save_by_base64(
+                    data.get("data"), save_dir=save_dir, filename=filename
+                )
 
         prefix = candidates.pop()
         used.append(prefix)
