@@ -194,10 +194,10 @@ if __name__ == "__main__":
         save_dir = "images"
 
         for filename, data in tqdm(res.items()):
-            if (url := data.get("url")) is not None:
-                crawler.save(url, save_dir=save_dir, filename=filename)
-            elif (image := data.get("data")) is not None:
-                crawler.save_by_base64(image, save_dir=save_dir, filename=filename)
+            if data.get("url") is not None:
+                crawler.save(data.get("url"), save_dir=save_dir, filename=filename)
+            elif data.get("data") is not None:
+                crawler.save_by_base64(data.get("data"), save_dir=save_dir, filename=filename)
 
         prefix = candidates.pop()
         used.append(prefix)
