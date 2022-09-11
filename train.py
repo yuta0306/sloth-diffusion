@@ -18,7 +18,6 @@ from diffusions.schedulers import DDIM, DDPM
 
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
-from pytorch_lightning.callbacks import QuantizationAwareTraining
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (
     CenterCrop,
@@ -320,10 +319,9 @@ if __name__ == "__main__":
         save_top_k=-1,
         auto_insert_metric_name=False,
     )
-    quantizer = QuantizationAwareTraining()
     trainer = pl.Trainer(
         logger=logger,
-        callbacks=[checkpoint, quantizer],
+        callbacks=checkpoint,
         max_epochs=-1,
         accelerator=("gpu" if torch.cuda.is_available() else "cpu")
         if not use_tpu
