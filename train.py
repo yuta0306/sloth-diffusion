@@ -18,6 +18,7 @@ from diffusions.schedulers import DDIM, DDPM
 
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
+from pytorch_lightning.callbacks import QuantizationAwareTraining
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (
     CenterCrop,
@@ -31,6 +32,8 @@ from torchvision.transforms import (
 ckpt = None
 if len(sys.argv) > 1:
     ckpt = sys.argv[1]
+
+use_tpu = True
 
 
 def get_transforms(phase: str = "train", sample_size: int = 64):
@@ -195,7 +198,7 @@ class SlothRetriever(pl.LightningDataModule):
         files = None
         for top, _, filenames in os.walk("images"):
             files = filenames
-        self.files = np.array(
+        files = np.array(
             [
                 os.path.join(top, filename)
                 for filename in files
@@ -203,15 +206,15 @@ class SlothRetriever(pl.LightningDataModule):
             ]
         )
 
-        val_idx = np.random.choice(len(self.files), size=10000)  # valid size = 10000
-        trn_idx = np.ones(len(self.files), dtype=bool)
+        val_idx = np.random.choice(len(files), size=10000)  # valid size = 10000
+        trn_idx = np.ones(len(files), dtype=bool)
         trn_idx[val_idx] = False
         self.validset = SlothDataset(
-            files=self.files[val_idx],
+            files=files[val_idx],
             transforms=get_transforms("valid", sample_size=self.sample_size),
         )
         self.trainset = SlothDataset(
-            files=self.files[trn_idx],
+            files=files[trn_idx],
             transforms=get_transforms("train", sample_size=self.sample_size),
         )
 
@@ -220,21 +223,25 @@ class SlothRetriever(pl.LightningDataModule):
             self.trainset,
             batch_size=self.batch_size,
             shuffle=True,
-            num_workers=os.cpu_count() if os.cpu_count() is not None else 0,
+            num_workers=(os.cpu_count() if os.cpu_count() is not None else 0)
+            if not use_tpu
+            else 0,
         )
 
     def val_dataloader(self):
         return DataLoader(
             self.validset,
             batch_size=self.batch_size,
-            num_workers=os.cpu_count() if os.cpu_count() is not None else 0,
+            num_workers=(os.cpu_count() if os.cpu_count() is not None else 0)
+            if not use_tpu
+            else 0,
         )
 
 
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    bsz = 16
-    acc = 4  # 1
+    bsz = 16 if not use_tpu else 128
+    acc = 4 if not use_tpu else 1  # 1
     iters = 5000  # 2000
     lr = 1e-4
     sample_size = 64
@@ -316,11 +323,13 @@ if __name__ == "__main__":
         logger=logger,
         callbacks=checkpoint,
         max_epochs=-1,
-        accelerator="gpu" if torch.cuda.is_available() else "cpu",
-        devices=-1,
+        accelerator=("gpu" if torch.cuda.is_available() else "cpu")
+        if not use_tpu
+        else "tpu",
+        devices=-1 if not use_tpu else 8,
         gradient_clip_val=1.0,
         accumulate_grad_batches=acc,
-        precision=16,
+        precision=16 if not use_tpu else "bf16",
     )
 
     trainer.fit(model=model, datamodule=dm, ckpt_path=ckpt)
