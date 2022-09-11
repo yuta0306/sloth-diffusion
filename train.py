@@ -191,12 +191,13 @@ class SlothRetriever(pl.LightningDataModule):
         self.sample_size = sample_size
 
     def prepare_data(self) -> None:
+        files = None
         for top, _, filenames in os.walk("images"):
-            pass
+            files = filenames
         self.files = np.array(
             [
                 os.path.join(top, filename)
-                for filename in filenames
+                for filename in files
                 if filename[-4:] == ".jpg"
             ]
         )
