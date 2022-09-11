@@ -172,8 +172,9 @@ class LightningModel(pl.LightningModule):
                 batch_size=1, generator=generator, apply_func=decode_image, out=outs
             )["sample"]
             seqs = list(list(zip(*outs))[0])
-            seqs = self.pipeline.tensor_to_pil(seqs[0])
-            seqs.save(
+
+            seqs = [self.pipeline.tensor_to_pil(seq) for seq in seqs]
+            seqs[0].save(
                 os.path.join(
                     "results", f"epoch_{self.current_epoch}", f"image_{i}.gif"
                 ),
