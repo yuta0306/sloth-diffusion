@@ -15,7 +15,7 @@ html5lib = "^1.1"
 lxml = "^4.9.1"
 diffusers = "^0.2.4"
 wandb = "^0.13.2"
-diffusions = {git = "https://github.com/yuta0306/diffusions.git", rev = "main"}
+diffusions = "^0.1.11"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.10.1"

@@ -23,7 +23,6 @@ from torchvision.transforms import (
     CenterCrop,
     Compose,
     InterpolationMode,
-    Normalize,
     RandomHorizontalFlip,
     Resize,
     ToTensor,
@@ -51,6 +50,11 @@ def get_transforms(phase: str = "train", sample_size: int = 64):
             ToTensor(),
         ]
     )
+
+
+def decode_image(images: torch.Tensor) -> torch.Tensor:
+    images = (images + 1) / 2
+    return images
 
 
 class SlothDataset(Dataset):
@@ -164,9 +168,12 @@ class LightningModel(pl.LightningModule):
         os.makedirs(f"results/epoch_{self.current_epoch}", exist_ok=True)
         for i in range(2):
             outs = []
-            _ = self.pipeline(batch_size=1, generator=generator, out=outs)["sample"]
+            _ = self.pipeline(
+                batch_size=1, generator=generator, apply_func=decode_image, out=outs
+            )["sample"]
             seqs = list(list(zip(*outs))[0])
-            seqs[0].save(
+            seqs = self.pipeline.tensor_to_pil(seqs[0])
+            seqs.save(
                 os.path.join(
                     "results", f"epoch_{self.current_epoch}", f"image_{i}.gif"
                 ),
@@ -194,7 +201,7 @@ class SlothRetriever(pl.LightningDataModule):
             ]
         )
 
-        val_idx = np.random.choice(len(self.files), size=len(self.files) // 10)
+        val_idx = np.random.choice(len(self.files), size=10000)  # valid size = 10000
         trn_idx = np.ones(len(self.files), dtype=bool)
         trn_idx[val_idx] = False
         self.validset = SlothDataset(
@@ -262,6 +269,7 @@ if __name__ == "__main__":
             UpBlock,
         ),
         head_dim=32,
+        dropout=0.2,
         memory_efficient=True,
     )
 
@@ -291,7 +299,7 @@ if __name__ == "__main__":
     # sr_model = sr_model.cpu()
 
     logger = pl_loggers.WandbLogger(
-        name="ddpm-3layers",
+        name="ddpm-3layers-dropout",
         project="sloth-diffusion",
     )
     checkpoint_dir = "weights"
