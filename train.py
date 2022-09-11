@@ -332,4 +332,7 @@ if __name__ == "__main__":
         precision=16 if not use_tpu else "bf16",
     )
 
+    if use_tpu:
+        dm.prepare_data()
+
     trainer.fit(model=model, datamodule=dm, ckpt_path=ckpt)
