@@ -196,7 +196,7 @@ class SlothRetriever(pl.LightningDataModule):
 
     def prepare_data(self) -> None:
         files = None
-        for top, _, filenames in os.walk("images"):
+        for top, _, filenames in os.walk("./images"):
             files = filenames
         files = np.array(
             [
