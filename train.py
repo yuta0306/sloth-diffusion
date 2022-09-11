@@ -33,7 +33,7 @@ ckpt = None
 if len(sys.argv) > 1:
     ckpt = sys.argv[1]
 
-use_tpu = True
+use_tpu = False
 
 
 def get_transforms(phase: str = "train", sample_size: int = 64):
@@ -226,6 +226,7 @@ class SlothRetriever(pl.LightningDataModule):
             num_workers=(os.cpu_count() if os.cpu_count() is not None else 0)
             if not use_tpu
             else 0,
+            drop_last=True,
         )
 
     def val_dataloader(self):
@@ -319,9 +320,10 @@ if __name__ == "__main__":
         save_top_k=-1,
         auto_insert_metric_name=False,
     )
+    quantizer = QuantizationAwareTraining()
     trainer = pl.Trainer(
         logger=logger,
-        callbacks=checkpoint,
+        callbacks=[checkpoint, quantizer],
         max_epochs=-1,
         accelerator=("gpu" if torch.cuda.is_available() else "cpu")
         if not use_tpu
