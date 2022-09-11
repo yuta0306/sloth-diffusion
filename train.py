@@ -18,6 +18,7 @@ from diffusions.schedulers import DDIM, DDPM
 
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
+from pytorch_lightning.callbacks import LearningRateMonitor, StochasticWeightAveraging
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (
     CenterCrop,
@@ -108,7 +109,9 @@ class LightningModel(pl.LightningModule):
         lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer, T_0=self.iters_per_epoch, T_mult=2
         )
-        return [optimizer], [{"scheduler": lr_scheduler, "interval": "step"}]
+        return [optimizer], [
+            {"scheduler": lr_scheduler, "interval": "step", "name": "train/lr"}
+        ]
 
     def forward(self, sample, timesteps):
         sample = self.unet(sample, timesteps)
@@ -226,6 +229,7 @@ class SlothRetriever(pl.LightningDataModule):
             if not use_tpu
             else 0,
             drop_last=True,
+            pin_memory=True,
         )
 
     def val_dataloader(self):
@@ -235,6 +239,7 @@ class SlothRetriever(pl.LightningDataModule):
             num_workers=(os.cpu_count() if os.cpu_count() is not None else 0)
             if not use_tpu
             else 0,
+            pin_memory=True,
         )
 
 
@@ -279,7 +284,7 @@ if __name__ == "__main__":
         ),
         head_dim=32,
         dropout=0.2,
-        memory_efficient=True,
+        memory_efficient=False,
     )
 
     # noise_scheduler = DDIM(
@@ -319,9 +324,10 @@ if __name__ == "__main__":
         save_top_k=-1,
         auto_insert_metric_name=False,
     )
+    lr_monitor = LearningRateMonitor(logging_interval="step")
     trainer = pl.Trainer(
         logger=logger,
-        callbacks=checkpoint,
+        callbacks=[checkpoint, lr_monitor],
         max_epochs=-1,
         accelerator=("gpu" if torch.cuda.is_available() else "cpu")
         if not use_tpu
