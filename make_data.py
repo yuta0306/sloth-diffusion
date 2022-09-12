@@ -1,3 +1,4 @@
+import json
 import os
 from typing import List, Tuple
 
@@ -35,16 +36,23 @@ def save_image_as_pt(file: str, save_to: str):
 
 
 if __name__ == "__main__":
-    filenames = get_filenames("./images")
-    print("Full data size:", len(filenames))
+    # filenames = get_filenames("./images")
+    # print("Full data size:", len(filenames))
 
-    train_files, valid_files = split(filenames)
+    # train_files, valid_files = split(filenames)
 
-    Parallel(n_jobs=-1)(
-        delayed(save_image_as_pt)(os.path.join("images", filename), "./train")
-        for filename in tqdm(train_files)
-    )
-    Parallel(n_jobs=-1)(
-        delayed(save_image_as_pt)(os.path.join("images", filename), "./valid")
-        for filename in tqdm(valid_files)
-    )
+    # Parallel(n_jobs=-1)(
+    #     delayed(save_image_as_pt)(os.path.join("images", filename), "./train")
+    #     for filename in tqdm(train_files)
+    # )
+    # Parallel(n_jobs=-1)(
+    #     delayed(save_image_as_pt)(os.path.join("images", filename), "./valid")
+    #     for filename in tqdm(valid_files)
+    # )
+    for _, _, train_files in os.walk("train"):
+        print(len(train_files))
+    for _, _, valid_files in os.walk("valid"):
+        print(len(valid_files))
+
+    json.dump(train_files, open("train.json", "w"))
+    json.dump(valid_files, open("valid.json", "w"))

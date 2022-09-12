@@ -133,3 +133,4 @@ weights/
 wandb/
 train/
 valid/
+*.json
