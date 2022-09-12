@@ -131,3 +131,5 @@ dmypy.json
 images/
 weights/
 wandb/
+train/
+valid/

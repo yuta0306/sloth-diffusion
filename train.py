@@ -18,7 +18,7 @@ from diffusions.schedulers import DDIM, DDPM
 
 # from diffusions.utils import EMAModel  # , resize_image_to
 from PIL import Image
-from pytorch_lightning.callbacks import LearningRateMonitor, StochasticWeightAveraging
+from pytorch_lightning.callbacks import LearningRateMonitor
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (
     CenterCrop,
@@ -43,18 +43,17 @@ def get_transforms(phase: str = "train", sample_size: int = 64):
                 Resize(sample_size, interpolation=InterpolationMode.BILINEAR),
                 CenterCrop(sample_size),
                 RandomHorizontalFlip(),
-                ToTensor(),
             ]
         )
     return Compose(
         [
             Resize(sample_size, interpolation=InterpolationMode.BILINEAR),
             CenterCrop(sample_size),
-            ToTensor(),
         ]
     )
 
 
+@torch.jit.script
 def decode_image(images: torch.Tensor) -> torch.Tensor:
     images = (images + 1) / 2
     return images
@@ -71,13 +70,11 @@ class SlothDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, index):
-        filename = self.files[index]
-        item = Image.open(filename)
-        item = item.convert("RGB")
+        item = torch.load(self.files[index])
+        item = item.float() / 127.5 - 1.0
 
         if self.transforms is not None:
             item = self.transforms(item)
-            item = item * 2 - 1.0
 
         return item
 
@@ -110,7 +107,12 @@ class LightningModel(pl.LightningModule):
             optimizer, T_0=self.iters_per_epoch, T_mult=2
         )
         return [optimizer], [
-            {"scheduler": lr_scheduler, "interval": "step", "name": "train/lr"}
+            {
+                "scheduler": lr_scheduler,
+                "interval": "step",
+                "frequency": 1,
+                "name": "train/lr",
+            }
         ]
 
     def forward(self, sample, timesteps):
@@ -197,26 +199,21 @@ class SlothRetriever(pl.LightningDataModule):
         self.sample_size = sample_size
 
     def prepare_data(self) -> None:
-        files = None
-        for top, _, filenames in os.walk("./images"):
-            files = filenames
-        files = np.array(
-            [
-                os.path.join(top, filename)
-                for filename in files
-                if filename[-4:] == ".jpg"
-            ]
-        )
+        train_files = None
+        valid_files = None
+        for top, _, filenames in os.walk("./train"):
+            train_files = filenames
+        for top, _, filenames in os.walk("./valid"):
+            valid_files = filenames
+        train_files = [os.path.join("train", filename) for filename in filenames]
+        valid_files = [os.path.join("valid", filename) for filename in filenames]
 
-        val_idx = np.random.choice(len(files), size=10000)  # valid size = 10000
-        trn_idx = np.ones(len(files), dtype=bool)
-        trn_idx[val_idx] = False
         self.validset = SlothDataset(
-            files=files[val_idx],
+            files=valid_files,
             transforms=get_transforms("valid", sample_size=self.sample_size),
         )
         self.trainset = SlothDataset(
-            files=files[trn_idx],
+            files=train_files,
             transforms=get_transforms("train", sample_size=self.sample_size),
         )
 
@@ -336,6 +333,7 @@ if __name__ == "__main__":
         gradient_clip_val=1.0,
         accumulate_grad_batches=acc,
         precision=16 if not use_tpu else "bf16",
+        benchmark=True,  # 高速化
     )
 
     if use_tpu:
