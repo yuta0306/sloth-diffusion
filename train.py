@@ -323,6 +323,7 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         logger=logger,
         callbacks=[checkpoint, lr_monitor],
+        num_sanity_val_steps=0,
         max_epochs=-1,
         accelerator=("gpu" if torch.cuda.is_available() else "cpu")
         if not use_tpu
