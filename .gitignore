@@ -133,4 +133,5 @@ weights/
 wandb/
 train/
 valid/
+*.zip
 *.json

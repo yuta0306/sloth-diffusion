@@ -1,8 +1,8 @@
+import json
 import os
 import sys
 from typing import List
 
-import numpy as np
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
 import torch
@@ -17,7 +17,6 @@ from diffusions.pipelines import DDIMPipeline, DDPMPipeline
 from diffusions.schedulers import DDIM, DDPM
 
 # from diffusions.utils import EMAModel  # , resize_image_to
-from PIL import Image
 from pytorch_lightning.callbacks import LearningRateMonitor
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (
@@ -26,7 +25,6 @@ from torchvision.transforms import (
     InterpolationMode,
     RandomHorizontalFlip,
     Resize,
-    ToTensor,
 )
 
 ckpt = None
@@ -104,7 +102,10 @@ class LightningModel(pl.LightningModule):
             params=self.unet.parameters(), lr=self.lr, eps=1e-8, weight_decay=0
         )
         lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            optimizer, T_0=self.iters_per_epoch, T_mult=2
+            optimizer,
+            T_0=self.iters_per_epoch,
+            T_mult=2,
+            verbose=True,
         )
         return [optimizer], [
             {
@@ -199,14 +200,8 @@ class SlothRetriever(pl.LightningDataModule):
         self.sample_size = sample_size
 
     def prepare_data(self) -> None:
-        train_files = None
-        valid_files = None
-        for top, _, filenames in os.walk("./train"):
-            train_files = filenames
-        for top, _, filenames in os.walk("./valid"):
-            valid_files = filenames
-        train_files = [os.path.join("train", filename) for filename in filenames]
-        valid_files = [os.path.join("valid", filename) for filename in filenames]
+        train_files = json.load(open("train.json"))
+        valid_files = json.load(open("valid.json"))
 
         self.validset = SlothDataset(
             files=valid_files,
