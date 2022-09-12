@@ -203,6 +203,9 @@ class SlothRetriever(pl.LightningDataModule):
         train_files = json.load(open("train.json"))
         valid_files = json.load(open("valid.json"))
 
+        train_files = [os.path.join("train", filename) for filename in train_files]
+        valid_files = [os.path.join("valid", filename) for filename in valid_files]
+
         self.validset = SlothDataset(
             files=valid_files,
             transforms=get_transforms("valid", sample_size=self.sample_size),
