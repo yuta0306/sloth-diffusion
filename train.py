@@ -77,12 +77,13 @@ class SlothDataset(Dataset):
             filename = self.files[index].replace(".jpg", ".png")
         image = Image.open(filename)
         image = image.convert("RGB")
-        image = np.array(image)
-        item = torch.from_numpy(image)
-        item = item.float() / 127.5 - 1.0
 
         if self.transforms is not None:
             item = self.transforms(item)
+
+        image = np.array(image)
+        item = torch.from_numpy(image)
+        item = item.float() / 127.5 - 1.0
 
         return item
 
