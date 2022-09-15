@@ -214,11 +214,11 @@ class SlothRetriever(pl.LightningDataModule):
         valid_files = json.load(open("valid.json"))
 
         train_files = [
-            os.path.join("train", filename.replace(".pt", ".jpg"))
+            os.path.join("images", filename.replace(".pt", ".jpg"))
             for filename in train_files
         ]
         valid_files = [
-            os.path.join("valid", filename.replace(".pt", ".jpg"))
+            os.path.join("images", filename.replace(".pt", ".jpg"))
             for filename in valid_files
         ]
 
