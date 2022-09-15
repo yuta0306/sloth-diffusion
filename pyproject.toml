@@ -17,6 +17,7 @@ diffusers = "^0.2.4"
 wandb = "^0.13.2"
 diffusions = "^0.1.11"
 joblib = "^1.1.0"
+transformers = "^4.22.0"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.10.1"

@@ -10,6 +10,7 @@ import pytorch_lightning.loggers as pl_loggers
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+import transformers
 from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 from diffusions.models.imagen import EfficientDownBlock, EfficientUpBlock
 
@@ -114,12 +115,13 @@ class LightningModel(pl.LightningModule):
         optimizer = optim.AdamW(
             params=self.unet.parameters(), lr=self.lr, eps=1e-8, weight_decay=0
         )
-        lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        lr_scheduler = transformers.get_cosine_with_hard_restarts_schedule_with_warmup(
             optimizer,
-            T_0=self.iters_per_epoch,
-            T_mult=2,
-            verbose=True,
+            num_warmup_steps=self.iters_per_epoch,
+            num_training_steps=self.iters_per_epoch,
+            num_cycles=2,
         )
+
         return [optimizer], [
             {
                 "scheduler": lr_scheduler,
