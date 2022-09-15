@@ -3,6 +3,7 @@ import os
 import sys
 from typing import List
 
+import einops
 import numpy as np
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
@@ -83,6 +84,7 @@ class SlothDataset(Dataset):
 
             item = np.array(item)
             item = torch.from_numpy(item.astype(np.float32))
+            item = einops.rearrange(item, "h w c -> c h w")
             item = item / 127.5 - 1.0
 
         return item
