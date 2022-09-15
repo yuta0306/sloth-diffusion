@@ -263,7 +263,7 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     bsz = 16 if not use_tpu else 128
     acc = 4 if not use_tpu else 1  # 1
-    iters = 5000  # 2000
+    iters = 500  # 2000
     lr = 1e-4
     sample_size = 64
 
@@ -354,6 +354,7 @@ if __name__ == "__main__":
         accumulate_grad_batches=acc,
         precision=16 if not use_tpu else "bf16",
         benchmark=True,  # 高速化
+        val_check_interval=1000,
     )
 
     if use_tpu:
