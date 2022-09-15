@@ -82,8 +82,8 @@ class SlothDataset(Dataset):
             item = self.transforms(image)
 
         image = np.array(image)
-        item = torch.from_numpy(image)
-        item = item.float() / 127.5 - 1.0
+        item = torch.from_numpy(image.astype(np.float32))
+        item = item / 127.5 - 1.0
 
         return item
 
