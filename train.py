@@ -79,7 +79,7 @@ class SlothDataset(Dataset):
         image = image.convert("RGB")
 
         if self.transforms is not None:
-            item = self.transforms(item)
+            item = self.transforms(image)
 
         image = np.array(image)
         item = torch.from_numpy(image)
