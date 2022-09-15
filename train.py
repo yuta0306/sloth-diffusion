@@ -3,6 +3,7 @@ import os
 import sys
 from typing import List
 
+import numpy as np
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
 import torch
@@ -15,6 +16,7 @@ from diffusions.models.imagen import EfficientDownBlock, EfficientUpBlock
 # from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
 from diffusions.pipelines import DDIMPipeline, DDPMPipeline
 from diffusions.schedulers import DDIM, DDPM
+from PIL import Image
 
 # from diffusions.utils import EMAModel  # , resize_image_to
 from pytorch_lightning.callbacks import LearningRateMonitor
@@ -68,7 +70,15 @@ class SlothDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, index):
-        item = torch.load(self.files[index])
+        # item = torch.load(self.files[index])
+        if os.path.exists(self.files[index]):
+            filename = self.files[index]
+        else:
+            filename = self.files[index].replace(".jpg", ".png")
+        image = Image.open(self.files[index])
+        image = image.convert("RGB")
+        image = np.array(image)
+        item = torch.from_numpy(image)
         item = item.float() / 127.5 - 1.0
 
         if self.transforms is not None:
@@ -203,8 +213,14 @@ class SlothRetriever(pl.LightningDataModule):
         train_files = json.load(open("train.json"))
         valid_files = json.load(open("valid.json"))
 
-        train_files = [os.path.join("train", filename) for filename in train_files]
-        valid_files = [os.path.join("valid", filename) for filename in valid_files]
+        train_files = [
+            os.path.join("train", filename.replace(".pt", ""))
+            for filename in train_files
+        ]
+        valid_files = [
+            os.path.join("valid", filename.replace(".pt", ""))
+            for filename in valid_files
+        ]
 
         self.validset = SlothDataset(
             files=valid_files,
