@@ -75,7 +75,7 @@ class SlothDataset(Dataset):
             filename = self.files[index]
         else:
             filename = self.files[index].replace(".jpg", ".png")
-        image = Image.open(self.files[index])
+        image = Image.open(filename)
         image = image.convert("RGB")
         image = np.array(image)
         item = torch.from_numpy(image)
