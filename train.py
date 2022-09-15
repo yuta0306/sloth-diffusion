@@ -81,9 +81,9 @@ class SlothDataset(Dataset):
         if self.transforms is not None:
             item = self.transforms(image)
 
-        item = np.array(item)
-        item = torch.from_numpy(image.astype(np.float32))
-        item = item / 127.5 - 1.0
+            item = np.array(item)
+            item = torch.from_numpy(item.astype(np.float32))
+            item = item / 127.5 - 1.0
 
         return item
 
