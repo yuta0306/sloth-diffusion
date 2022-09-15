@@ -30,8 +30,8 @@ def save_image_as_np(file: str, save_to: str):
         # image = einops.rearrange(image, "h w c -> c h w")
         filename = file.split("/")[-1].removesuffix(".png")
         filename = filename.removesuffix(".jpg")
-        torch.save(image, os.path.join(save_to, f"{filename}.npy"))
-    except Exception:
+        np.save(os.path.join(save_to, f"{filename}.npy"), image)
+    except Exception as e:
         print("invalid image:", file)
 
 

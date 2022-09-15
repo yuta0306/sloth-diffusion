@@ -118,8 +118,8 @@ class LightningModel(pl.LightningModule):
         lr_scheduler = transformers.get_cosine_with_hard_restarts_schedule_with_warmup(
             optimizer,
             num_warmup_steps=self.iters_per_epoch,
-            num_training_steps=self.iters_per_epoch,
-            num_cycles=2,
+            num_training_steps=self.iters_per_epoch * 4,
+            # num_cycles=2,
         )
 
         return [optimizer], [
@@ -354,7 +354,7 @@ if __name__ == "__main__":
         accumulate_grad_batches=acc,
         precision=16 if not use_tpu else "bf16",
         benchmark=True,  # 高速化
-        val_check_interval=1000,
+        val_check_interval=0.5,  # evaluation
     )
 
     if use_tpu:
