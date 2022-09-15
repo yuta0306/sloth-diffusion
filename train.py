@@ -263,7 +263,7 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     bsz = 16 if not use_tpu else 128
     acc = 4 if not use_tpu else 1  # 1
-    iters = 500  # 2000
+    iters = 500 // acc  # 2000
     lr = 1e-4
     sample_size = 64
 
