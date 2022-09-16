@@ -79,7 +79,9 @@ class SlothDataset(Dataset):
         #     filename = self.files[index].replace(".jpg", ".png")
         # image = Image.open(filename)
         # image = image.convert("RGB")
-        item = np.load(self.files[index])
+        with np.load(self.files[index]) as npz:
+            print(dir(npz))
+            print(list(npz.items()))
 
         if self.transforms is not None:
             item = torch.from_numpy(item.astype(np.float32))
