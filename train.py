@@ -80,6 +80,8 @@ class SlothDataset(Dataset):
         # image = Image.open(filename)
         # image = image.convert("RGB")
         image = np.load(self.files[index])
+        print(type(image))
+        print(image)
 
         if self.transforms is not None:
             item = self.transforms(image)
