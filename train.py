@@ -73,19 +73,20 @@ class SlothDataset(Dataset):
 
     def __getitem__(self, index):
         # item = torch.load(self.files[index])
-        if os.path.exists(self.files[index]):
-            filename = self.files[index]
-        else:
-            filename = self.files[index].replace(".jpg", ".png")
-        image = Image.open(filename)
-        image = image.convert("RGB")
+        # if os.path.exists(self.files[index]):
+        #     filename = self.files[index]
+        # else:
+        #     filename = self.files[index].replace(".jpg", ".png")
+        # image = Image.open(filename)
+        # image = image.convert("RGB")
+        image = np.load(self.files[index])
 
         if self.transforms is not None:
             item = self.transforms(image)
 
-            item = np.array(item)
+            # item = np.array(item)
             item = torch.from_numpy(item.astype(np.float32))
-            item = einops.rearrange(item, "h w c -> c h w")
+            # item = einops.rearrange(item, "h w c -> c h w")
             item = item / 127.5 - 1.0
 
         return item
