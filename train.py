@@ -4,7 +4,6 @@ import sys
 import warnings
 from typing import List
 
-import einops
 import numpy as np
 import pytorch_lightning as pl
 import pytorch_lightning.loggers as pl_loggers
@@ -12,11 +11,10 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 import transformers
+from diffusions.losses import FocalFrequencyLoss
+from diffusions.lr_schedulers import CosineAnnealingLR
 from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
 from diffusions.models.imagen import EfficientDownBlock, EfficientUpBlock
-
-# from diffusions.models import AttnDownBlock, AttnUpBlock, DownBlock, UNet, UpBlock
-# from diffusions.models.imagen import UnconditionalEfficientUnet, UnconditionalImagen
 from diffusions.pipelines import DDIMPipeline, DDPMPipeline
 from diffusions.schedulers import DDIM, DDPM
 from PIL import Image
@@ -116,6 +114,7 @@ class LightningModel(pl.LightningModule):
         self.noise_scheduler = noise_scheduler
         self.iters_per_epoch = iters_per_epoch
         self.criterion = F.mse_loss
+        self.ffl = FocalFrequencyLoss()
         self.lr = lr
 
         if isinstance(noise_scheduler, DDIM):
@@ -127,11 +126,11 @@ class LightningModel(pl.LightningModule):
         optimizer = optim.AdamW(
             params=self.unet.parameters(), lr=self.lr, eps=1e-8, weight_decay=0
         )
-        lr_scheduler = transformers.get_cosine_with_hard_restarts_schedule_with_warmup(
+        lr_scheduler = CosineAnnealingLR(
             optimizer,
-            num_warmup_steps=self.iters_per_epoch,
-            num_training_steps=self.iters_per_epoch * 4,
-            # num_cycles=2,
+            T_0=self.iters_per_epoch,
+            T_warmup=self.iters_per_epoch,
+            T_multi=2,
         )
 
         return [optimizer], [
@@ -275,7 +274,7 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     bsz = 16 if not use_tpu else 128
     acc = 4 if not use_tpu else 1  # 1
-    iters = 500 // acc  # 2000
+    iters = 3000
     lr = 1e-4
     sample_size = 64
 

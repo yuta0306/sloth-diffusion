@@ -195,7 +195,7 @@ training = ["accelerate", "datasets", "modelcards", "tensorboard"]
 
 [[package]]
 name = "diffusions"
-version = "0.1.11"
+version = "0.1.12"
 description = "Diffusion models"
 category = "main"
 optional = false
@@ -1366,8 +1366,8 @@ diffusers = [
     {file = "diffusers-0.2.4.tar.gz", hash = "sha256:01b272566ba2ddfafa7ca0c9259f151ea7b91ec648099ceaf29162117c5b0405"},
 ]
 diffusions = [
-    {file = "diffusions-0.1.11-py3-none-any.whl", hash = "sha256:ba6018ab18056b06636924ef99e8eb40b89ae3c1caf838c1b4bc2879e686a3de"},
-    {file = "diffusions-0.1.11.tar.gz", hash = "sha256:82976826f6a95aa3832bb6cc67124edbb67a688308c437b45c05904a9eee13f5"},
+    {file = "diffusions-0.1.12-py3-none-any.whl", hash = "sha256:13f4ba26ec9b493524c6e1ed41ad96d1f0c174c28fde9d2dda7ba4b78e341831"},
+    {file = "diffusions-0.1.12.tar.gz", hash = "sha256:6e9fecbe4563cf8c88d58c892261588b042eed2a1e4475fbf71ab8c70e4dd864"},
 ]
 docker-pycreds = [
     {file = "docker-pycreds-0.4.0.tar.gz", hash = "sha256:6ce3270bcaf404cc4c3e27e4b6c70d3521deae82fb508767870fdbf772d584d4"},
