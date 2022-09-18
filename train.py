@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import warnings
 from typing import List
 
 import einops
@@ -30,6 +31,8 @@ from torchvision.transforms import (
     RandomHorizontalFlip,
     Resize,
 )
+
+warnings.simplefilter("ignore")
 
 ckpt = None
 if len(sys.argv) > 1:
@@ -79,12 +82,14 @@ class SlothDataset(Dataset):
         #     filename = self.files[index].replace(".jpg", ".png")
         # image = Image.open(filename)
         # image = image.convert("RGB")
-        with np.load(self.files[index], allow_pickle=True) as npz:
-            # print(dir(npz))
-            # print(list(npz.keys()))
-            # print(npz.files)
-            item = npz["archive/data.pkl"]
-            print(item)
+        # with np.load(self.files[index], allow_pickle=True) as npz:
+        #     # print(dir(npz))
+        #     # print(list(npz.keys()))
+        #     # print(npz.files)
+        #     item = npz["archive/data.pkl"]
+        #     print(item)
+        meta = np.load(self.files[index])
+        item = np.loads(meta["archive/data.pkl"])
 
         if self.transforms is not None:
             item = torch.from_numpy(item.astype(np.float32))
