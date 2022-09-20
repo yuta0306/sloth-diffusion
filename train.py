@@ -274,7 +274,7 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     bsz = 16 if not use_tpu else 128
     acc = 4 if not use_tpu else 1  # 1
-    iters = 3000
+    iters = 1000  # 3000
     lr = 1e-4
     sample_size = 64
 
@@ -292,25 +292,31 @@ if __name__ == "__main__":
     #     groups=32,
     #     use_checkpoint=False,
     # )
-    dim = 224
+    dim = 128
     model = UNet(
         sample_size=sample_size,
         in_channels=3,
         out_channels=3,
         layers_per_block=2,
-        block_out_channels=(dim, dim * 2, dim * 4),
+        block_out_channels=(dim, dim, dim * 2, dim * 2, dim * 4, dim * 4),
         down_block_types=(
             DownBlock,
+            DownBlock,
+            DownBlock,
+            DownBlock,
             AttnDownBlock,
-            AttnDownBlock,
+            DownBlock,
         ),
         up_block_types=(
+            UpBlock,
             AttnUpBlock,
-            AttnUpBlock,
+            UpBlock,
+            UpBlock,
+            UpBlock,
             UpBlock,
         ),
         head_dim=32,
-        dropout=0.2,
+        mid_block_scale_factor=2**-0.5,
         memory_efficient=False,
     )
 
@@ -322,7 +328,7 @@ if __name__ == "__main__":
     noise_scheduler = DDPM(
         num_train_timesteps=1000,
         scheduler_type="linear",
-        dynamic_threshold=False,
+        dynamic_threshold=True,
         beta_start=0.0015,
         beta_end=0.0195,
     )
@@ -340,7 +346,7 @@ if __name__ == "__main__":
     # sr_model = sr_model.cpu()
 
     logger = pl_loggers.WandbLogger(
-        name="ddpm-3layers-dropout",
+        name="diffusers-example",
         project="sloth-diffusion",
     )
     checkpoint_dir = "weights"
