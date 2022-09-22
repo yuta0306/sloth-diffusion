@@ -194,6 +194,7 @@ class LightningModel(pl.LightningModule):
 
     def validation_epoch_end(self, outputs) -> None:
         loss = 0.0
+        i = 1
         for i, out in enumerate(outputs, 1):
             loss = loss + out["loss"]
         loss = loss / i
