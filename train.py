@@ -273,10 +273,10 @@ class SlothRetriever(pl.LightningDataModule):
 
 if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    bsz = 48 if not use_tpu else 128
+    bsz = 32 if not use_tpu else 128
     acc = 4 if not use_tpu else 1  # 1
     iters = 1000  # 3000
-    lr = 1e-4
+    lr = 2e-6
     sample_size = 64
 
     dm = SlothRetriever(batch_size=bsz, sample_size=sample_size)
@@ -293,27 +293,23 @@ if __name__ == "__main__":
     #     groups=32,
     #     use_checkpoint=False,
     # )
-    dim = 128
+    dim = 224
     model = UNet(
         sample_size=sample_size,
         in_channels=3,
         out_channels=3,
         layers_per_block=2,
-        block_out_channels=(dim, dim, dim * 2, dim * 2, dim * 4, dim * 4),
+        block_out_channels=(dim, dim * 2, dim * 3, dim * 4),
         down_block_types=(
-            DownBlock,
-            DownBlock,
-            DownBlock,
             DownBlock,
             AttnDownBlock,
             DownBlock,
+            AttnDownBlock,
         ),
         up_block_types=(
-            UpBlock,
             AttnUpBlock,
             UpBlock,
-            UpBlock,
-            UpBlock,
+            AttnUpBlock,
             UpBlock,
         ),
         head_dim=32,
